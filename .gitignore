@@ -1,0 +1,19 @@
+# Python environments and cache
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# YOLOv8 models and runs
+yolov8n.pt
+*.pt
+runs/
