@@ -7,3 +7,7 @@ pydantic-settings
 python-dotenv
 ultralytics
 opencv-python
+apscheduler
+requests
+joblib
+scikit-learn

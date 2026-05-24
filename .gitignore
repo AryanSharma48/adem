@@ -13,7 +13,9 @@ __pycache__/
 .idea/
 .DS_Store
 
-# YOLOv8 models and runs
+# ML Models, Weights, and Data
 yolov8n.pt
 *.pt
+*.pkl
 runs/
+PROJECT_CONTEXT.md
