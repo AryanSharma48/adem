@@ -11,3 +11,6 @@ apscheduler
 requests
 joblib
 scikit-learn
+shap
+pandas
+python-telegram-bot

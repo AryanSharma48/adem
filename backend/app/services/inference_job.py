@@ -1,115 +1,162 @@
 import os
-import torch
-import joblib
 import requests
 import numpy as np
+import torch
+import joblib
 from datetime import datetime, timezone
 
 from app.core.database import SessionLocal
-from app.models.air_quality import AirQualityLog
+from app.models.air_quality import AirQualityLog  # still used for saving logs
 from app.ml.yolo_counter import count_vehicles
+from app.ml.model_defs import CNNLSTMForecast
 from app.core.config import settings
 
-def fetch_temperature() -> float:
-    # Astana coordinates from Open-Meteo
-    url = "https://api.open-meteo.com/v1/forecast?latitude=51.1694&longitude=71.4297&current_weather=true"
-    response = requests.get(url)
-    response.raise_for_status()
-    data = response.json()
-    return data["current_weather"]["temperature"]
+# --- Initialize ML Assets ---
+current_dir = os.path.dirname(os.path.abspath(__file__))
+ml_dir = os.path.join(current_dir, "..", "ml")
+scaler_path = os.path.join(ml_dir, "scaler.pkl")
+model_path = os.path.join(ml_dir, "adem_forecast.pt")
 
-def fetch_live_pm25() -> float:
-    # Use AQICN API token from config
-    url = f"https://api.waqi.info/feed/astana/?token={settings.AQICN_API_TOKEN}"
-    response = requests.get(url)
-    response.raise_for_status()
-    data = response.json()
-    
-    # Extract based on the sample_aqicn_response.json structure
-    try:
-        return float(data["data"]["iaqi"]["pm25"]["v"])
-    except KeyError:
-        print("Warning: Live PM2.5 data not available right now.")
-        return None
+scaler = None
+model = None
 
+try:
+    if os.path.exists(scaler_path):
+        scaler = joblib.load(scaler_path)
+    else:
+        print(f"Warning: scaler.pkl not found at {scaler_path}")
+        
+    if os.path.exists(model_path):
+        model = CNNLSTMForecast()
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+        model.eval()
+    else:
+        print(f"Warning: adem_forecast.pt weights not found at {model_path}")
+except Exception as e:
+    print(f"Error loading ML assets on startup: {e}")
+
+# --- Pipeline ---
 def run_adem_pipeline():
-    print(f"[{datetime.now(timezone.utc).isoformat()}] Starting ADEM Inference Pipeline...")
+    print(f"[{datetime.now(timezone.utc).isoformat()}] Running ADEM Inference Pipeline...")
     
-    # 1. Get Live Vehicles Per Minute via YOLOv8
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    video_file = os.path.join(current_dir, "..", "ml", "traffic.mp4")
-    vpm = count_vehicles(video_file)
-    print(f"-> Vehicles Per Minute (YOLOv8): {vpm}")
-    
-    # 2. Fetch Weather & Calculate Heating Degree Days
+    # 1. Real-time vehicles per minute
+    video_path = os.path.join(ml_dir, "traffic.mp4")
     try:
-        temp = fetch_temperature()
-        heating_degree_days = max(18.0 - temp, 0.0)
-        print(f"-> Temp: {temp}°C | Heating Degree Days: {heating_degree_days}")
-    except Exception as e:
-        print(f"-> Error fetching weather: {e}")
-        temp, heating_degree_days = 0.0, 0.0
-        
-    # 3. Load ML Artifacts & Predict 24-hour PM2.5 Forecast
-    predicted_pm25 = 0.0
-    primary_source = "traffic" if vpm > 100 else "heating"
-    
-    try:
-        scaler_path = os.path.join(current_dir, "..", "ml", "scaler.pkl")
-        model_path = os.path.join(current_dir, "..", "ml", "adem_forecast.pt")
-        
-        if os.path.exists(scaler_path) and os.path.exists(model_path):
-            scaler = joblib.load(scaler_path)
-            model = torch.load(model_path)
-            model.eval()
-            
-            # Prepare inputs
-            raw_inputs = np.array([[vpm, heating_degree_days, temp]])
-            scaled_inputs = scaler.transform(raw_inputs)
-            
-            with torch.no_grad():
-                # Convert to tensor and reshape for CNN-LSTM e.g., (batch, seq_len, features)
-                input_tensor = torch.tensor(scaled_inputs, dtype=torch.float32).unsqueeze(1)
-                predictions = model(input_tensor)
-                
-                # Extract 24-hour forecast
-                forecast_array = predictions.squeeze().tolist()
-                
-                # Use the immediate next hour as the predicted value for the DB record
-                predicted_pm25 = forecast_array[0] if isinstance(forecast_array, list) else forecast_array
-            print(f"-> ML Forecast successful. Next hour PM2.5 prediction: {predicted_pm25}")
+        vpm_result = count_vehicles(video_path)
+        # Handle dictionary if YOLO script was modified to return dict
+        if isinstance(vpm_result, dict):
+            vehicles_per_minute = vpm_result.get("vehicles_per_minute", 0)
         else:
-            print("-> ML artifacts (scaler/model) not found. Using fallback prediction.")
-            predicted_pm25 = 45.0 # Mock fallback
+            vehicles_per_minute = int(vpm_result)
+    except Exception as e:
+        print(f"Error extracting vehicles: {e}")
+        vehicles_per_minute = 0
+        
+    # 2. Live temperature and Heating Degree Days
+    try:
+        weather_url = "https://api.open-meteo.com/v1/forecast?latitude=51.1694&longitude=71.4206&current=temperature_2m"
+        w_res = requests.get(weather_url)
+        w_res.raise_for_status()
+        live_temp = w_res.json()["current"]["temperature_2m"]
+        heating_degree_days = max(18.0 - live_temp, 0.0)
+    except Exception as e:
+        print(f"Error fetching weather: {e}")
+        live_temp, heating_degree_days = 0.0, 0.0
+        
+    # 3. Live PM2.5 from AQICN
+    try:
+        aqi_url = f"https://api.waqi.info/feed/astana/?token={settings.AQICN_API_TOKEN}"
+        a_res = requests.get(aqi_url)
+        a_res.raise_for_status()
+        aqi_data = a_res.json()
+        
+        if aqi_data.get("status") == "ok":
+            iaqi = aqi_data.get("data", {}).get("iaqi", {})
+            if "pm25" in iaqi:
+                actual_pm25 = float(iaqi["pm25"]["v"])
+            else:
+                actual_pm25 = float(aqi_data.get("data", {}).get("aqi", 0.0))
+        else:
+            print(f"AQICN API Error: {aqi_data.get('data')}")
+            actual_pm25 = 0.0
+    except Exception as e:
+        print(f"Error fetching AQICN: {e}")
+        actual_pm25 = 0.0
+        
+    # 4. Primary Source Logic
+    if heating_degree_days > 5:
+        primary_source = 'heating'
+    elif vehicles_per_minute > 50:
+        primary_source = 'traffic'
+    else:
+        primary_source = 'background'
+        
+    # 5. ML Inference
+    predicted_pm25 = 0.0
+    if scaler and model:
+        try:
+            # Always fetch the last 24 HOURLY readings from Open-Meteo to match training scale exactly.
+            # (1 step = 1 hour, same as training data — no 30s DB row mismatch)
+            hist_air_url = (
+                "https://air-quality-api.open-meteo.com/v1/air-quality"
+                "?latitude=51.1694&longitude=71.4206&hourly=pm2_5&past_days=2&forecast_days=0"
+            )
+            hist_weather_url = (
+                "https://api.open-meteo.com/v1/forecast"
+                "?latitude=51.1694&longitude=71.4206&hourly=temperature_2m&past_days=2&forecast_days=0"
+            )
+
+            hist_pm25_list  = requests.get(hist_air_url).json()["hourly"]["pm2_5"]
+            hist_temp_list  = requests.get(hist_weather_url).json()["hourly"]["temperature_2m"]
+
+            # Take the most recent 24 non-null pairs
+            sequence_data = []
+            for pm, tmp in zip(reversed(hist_pm25_list), reversed(hist_temp_list)):
+                if pm is not None and tmp is not None:
+                    sequence_data.append([pm, max(18.0 - tmp, 0.0), vehicles_per_minute])
+                if len(sequence_data) == 24:
+                    break
+            sequence_data.reverse()  # back to chronological order
+
+            # Pad with current values if API returned fewer than 24 points
+            while len(sequence_data) < 24:
+                sequence_data.insert(0, [actual_pm25, heating_degree_days, vehicles_per_minute])
+
+            # Scale and run inference
+            raw_inputs    = np.array(sequence_data)             # (24, 3)
+            scaled_inputs = scaler.transform(raw_inputs)
+            input_tensor  = torch.tensor(scaled_inputs, dtype=torch.float32).transpose(0, 1).unsqueeze(0)
+            # input_tensor shape: (1, 3, 24) — batch=1, channels=3, seq_len=24
+
+            with torch.no_grad():
+                predictions = model(input_tensor)               # → (1, 24)
+                forecast_array = predictions.squeeze().tolist() # → list of 24 scaled values
+
+            # forecast_array[0] = next 1 hr, [1] = next 2 hrs, ... [23] = next 24 hrs
+            predicted_pm25_scaled = forecast_array[0] if isinstance(forecast_array, list) else forecast_array
+
+            # Inverse-transform only the PM2.5 column (column 0)
+            dummy_array = np.zeros((1, 3))
+            dummy_array[0, 0] = predicted_pm25_scaled
+            predicted_pm25 = float(scaler.inverse_transform(dummy_array)[0, 0])
+
+        except Exception as e:
+            print(f"Error during prediction: {e}")
+
             
-    except Exception as e:
-        print(f"-> Error during ML inference: {e}")
-        
-    # 4. Fetch Actual PM2.5
+    # 6. Save to Database
     try:
-        actual_pm25 = fetch_live_pm25()
-        print(f"-> Actual Live PM2.5 (AQICN): {actual_pm25}")
+        with SessionLocal() as db:
+            log = AirQualityLog(
+                timestamp=datetime.now(timezone.utc),
+                district="Astana Center",
+                pm25_actual=actual_pm25,
+                pm25_predicted=predicted_pm25,
+                vehicle_count=vehicles_per_minute,
+                primary_source=primary_source
+            )
+            db.add(log)
+            db.commit()
+            print(f"Saved DB Record: PM2.5={actual_pm25}, Pred={predicted_pm25:.2f}, Source={primary_source}")
     except Exception as e:
-        print(f"-> Error fetching actual PM2.5: {e}")
-        actual_pm25 = None
-        
-    # 5. Save to PostgreSQL Database
-    db = SessionLocal()
-    try:
-        log_entry = AirQualityLog(
-            timestamp=datetime.now(timezone.utc),
-            district="Astana Center",
-            pm25_actual=actual_pm25,
-            pm25_predicted=predicted_pm25,
-            vehicle_count=vpm,
-            primary_source=primary_source
-        )
-        db.add(log_entry)
-        db.commit()
-        print("-> Successfully saved AirQualityLog to database!")
-    except Exception as e:
-        db.rollback()
-        print(f"-> Database transaction failed: {e}")
-    finally:
-        db.close()
-        print("-> Pipeline run complete.")
+        print(f"DB Error: {e}")
