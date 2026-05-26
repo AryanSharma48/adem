@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     # Initialize and start APScheduler
     scheduler = BackgroundScheduler()
     # Run the pipeline every 30 minutes
-    scheduler.add_job(run_adem_pipeline, 'interval', seconds=30)
+    scheduler.add_job(run_adem_pipeline, 'interval', minutes=30)
     scheduler.start()
     
     # Trigger once immediately on boot so we have data right away

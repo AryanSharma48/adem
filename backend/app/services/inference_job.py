@@ -63,25 +63,31 @@ def run_adem_pipeline():
         print(f"Error fetching weather: {e}")
         live_temp, heating_degree_days = 0.0, 0.0
         
-    # 3. Live PM2.5 from AQICN
+    # 3. Live PM2.5 from Open-Meteo Air Quality API (µg/m³ — same source/unit as training data)
+    actual_pm25 = 0.0
     try:
-        aqi_url = f"https://api.waqi.info/feed/astana/?token={settings.AQICN_API_TOKEN}"
-        a_res = requests.get(aqi_url)
-        a_res.raise_for_status()
-        aqi_data = a_res.json()
-        
-        if aqi_data.get("status") == "ok":
-            iaqi = aqi_data.get("data", {}).get("iaqi", {})
-            if "pm25" in iaqi:
-                actual_pm25 = float(iaqi["pm25"]["v"])
-            else:
-                actual_pm25 = float(aqi_data.get("data", {}).get("aqi", 0.0))
-        else:
-            print(f"AQICN API Error: {aqi_data.get('data')}")
-            actual_pm25 = 0.0
+        om_aqi_url = (
+            "https://air-quality-api.open-meteo.com/v1/air-quality"
+            "?latitude=51.1694&longitude=71.4206&current=pm2_5"
+        )
+        om_res = requests.get(om_aqi_url, timeout=10)
+        om_res.raise_for_status()
+        actual_pm25 = float(om_res.json()["current"]["pm2_5"])
+        print(f"Open-Meteo PM2.5: {actual_pm25} µg/m³")
     except Exception as e:
-        print(f"Error fetching AQICN: {e}")
-        actual_pm25 = 0.0
+        print(f"Error fetching Open-Meteo PM2.5: {e}. Falling back to AQICN...")
+        # Fallback: AQICN (note: returns AQI index, not µg/m³ — less accurate)
+        try:
+            aqi_url = f"https://api.waqi.info/feed/astana/?token={settings.AQICN_API_TOKEN}"
+            a_res = requests.get(aqi_url, timeout=10)
+            a_res.raise_for_status()
+            aqi_data = a_res.json()
+            if aqi_data.get("status") == "ok":
+                iaqi = aqi_data.get("data", {}).get("iaqi", {})
+                actual_pm25 = float(iaqi["pm25"]["v"]) if "pm25" in iaqi else float(aqi_data["data"].get("aqi", 0.0))
+        except Exception as e2:
+            print(f"AQICN fallback also failed: {e2}")
+
         
     # 4. Primary Source Logic
     if heating_degree_days > 5:
@@ -121,6 +127,12 @@ def run_adem_pipeline():
             # Pad with current values if API returned fewer than 24 points
             while len(sequence_data) < 24:
                 sequence_data.insert(0, [actual_pm25, heating_degree_days, vehicles_per_minute])
+
+            # Always overwrite the final element with the live current reading.
+            # The archive API may lag by 1-2 hours; this ensures the model's most
+            # recent input is what's actually happening right now (e.g. 6.6 µg/m³),
+            # so it predicts a realistic next step (e.g. 8-9) not a stale jump (12+).
+            sequence_data[-1] = [actual_pm25, heating_degree_days, vehicles_per_minute]
 
             # Scale and run inference
             raw_inputs    = np.array(sequence_data)             # (24, 3)
