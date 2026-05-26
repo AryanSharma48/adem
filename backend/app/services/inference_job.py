@@ -3,6 +3,7 @@ import requests
 import numpy as np
 import torch
 import joblib
+import shap
 from datetime import datetime, timezone
 
 from app.core.database import SessionLocal
@@ -152,10 +153,33 @@ def run_adem_pipeline():
             dummy_array[0, 0] = predicted_pm25_scaled
             predicted_pm25 = float(scaler.inverse_transform(dummy_array)[0, 0])
 
+            # --- SHAP Feature Importance ---
+            # Use GradientExplainer (supports CNN+LSTM) to get per-feature contributions.
+            # We use the same input_tensor as background for speed (single-sample explanation).
+            shap_pm25_pct = shap_heating_pct = shap_traffic_pct = None
+            try:
+                # Background = zeros tensor (neutral "no signal" baseline).
+                # SHAP measures how much each feature pushed the prediction
+                # away from this baseline — avoids the 0% bug of self-comparison.
+                background = torch.zeros_like(input_tensor)
+                explainer = shap.GradientExplainer(model, background)
+                shap_vals = explainer.shap_values(input_tensor)  # list of (1,3,24) per output
+                # Average absolute contributions across batch(0), seq_len(2), and num_outputs(3) → leaves (3 channels)
+                shap_arr = np.array(shap_vals)                    # (1, 3, 24, 24)
+                shap_mean = np.abs(shap_arr).mean(axis=(0, 2, 3)) # → (3,)
+                total = shap_mean.sum() if shap_mean.sum() > 0 else 1.0
+                shap_pm25_pct    = round(float(shap_mean[0] / total), 4)
+                shap_heating_pct = round(float(shap_mean[1] / total), 4)
+                shap_traffic_pct = round(float(shap_mean[2] / total), 4)
+                print(f"SHAP → PM2.5:{shap_pm25_pct:.0%} Heating:{shap_heating_pct:.0%} Traffic:{shap_traffic_pct:.0%}")
+            except Exception as shap_err:
+                print(f"SHAP calculation skipped: {shap_err}")
+
+
         except Exception as e:
             print(f"Error during prediction: {e}")
+            shap_pm25_pct = shap_heating_pct = shap_traffic_pct = None
 
-            
     # 6. Save to Database
     try:
         with SessionLocal() as db:
@@ -165,7 +189,10 @@ def run_adem_pipeline():
                 pm25_actual=actual_pm25,
                 pm25_predicted=predicted_pm25,
                 vehicle_count=vehicles_per_minute,
-                primary_source=primary_source
+                primary_source=primary_source,
+                shap_pm25=shap_pm25_pct,
+                shap_heating=shap_heating_pct,
+                shap_traffic=shap_traffic_pct,
             )
             db.add(log)
             db.commit()

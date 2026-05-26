@@ -11,8 +11,9 @@ ADEM leverages a unique hybrid pipeline of computer vision, live API data, and d
 3. **Air Quality Baseline:** Fetches the live PM2.5 concentration (µg/m³) directly from the **Open-Meteo Air Quality API** — the same source the model was trained on, ensuring unit consistency.
 4. **Deep Learning Forecast:** Feeds the last 24 hours of real hourly PM2.5, HDD, and traffic data into a PyTorch **CNN-LSTM** model to predict PM2.5 levels for the next 24 hours. The live current reading is always anchored as the final input step.
 5. **Real-time Alerting:** If the predicted PM2.5 breaches the WHO safe limit (50 µg/m³), the system automatically triggers a **Telegram Bot** alert.
-6. **Data Persistence:** Logs every inference run (actual PM2.5, predicted PM2.5, vehicle count, primary source) to a **PostgreSQL** database hosted on Supabase.
-7. **Data Visualization:** Exposes all data via a **FastAPI** REST backend to be consumed by a responsive dashboard.
+6. **Explainable AI (SHAP):** Computes live feature importance for every prediction (e.g. 60% PM2.5 history, 30% heating, 10% traffic) using a GradientExplainer.
+7. **Data Persistence:** Logs every inference run (actual PM2.5, predicted PM2.5, vehicle count, primary source, and SHAP percentages) to a **PostgreSQL** database hosted on Supabase.
+8. **Data Visualization:** Exposes all data via a **FastAPI** REST backend to be consumed by a responsive dashboard.
 
 ---
 
@@ -48,6 +49,7 @@ The forecasting model (`adem_forecast.pt`) is a **CNN-LSTM hybrid** trained on 1
 * Ultralytics YOLOv8 — real-time vehicle tracking
 * OpenCV — video frame processing
 * Scikit-Learn — MinMaxScaler (`scaler.pkl`)
+* SHAP — Explainable AI (Feature Importance via `GradientExplainer`)
 
 **Data Sources:**
 * Open-Meteo Air Quality API — live & historical PM2.5 (µg/m³)

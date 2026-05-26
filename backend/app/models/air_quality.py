@@ -12,3 +12,7 @@ class AirQualityLog(Base):
     pm25_predicted = Column(Float)
     vehicle_count = Column(Integer)
     primary_source = Column(String)
+    # SHAP feature importance (0.0–1.0, sum = 1.0)
+    shap_pm25 = Column(Float, nullable=True)      # contribution of PM2.5 history
+    shap_heating = Column(Float, nullable=True)   # contribution of heating degree days
+    shap_traffic = Column(Float, nullable=True)   # contribution of vehicle count

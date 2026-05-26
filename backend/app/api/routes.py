@@ -26,7 +26,10 @@ def get_live_data(db: Session = Depends(get_db)):
             "pm25_actual": 0.0,
             "pm25_predicted": 0.0,
             "vehicle_count": 0,
-            "primary_source": "unknown"
+            "primary_source": "unknown",
+            "shap_pm25": None,
+            "shap_heating": None,
+            "shap_traffic": None,
         }
     return {
         "id": latest_log.id,
@@ -35,7 +38,10 @@ def get_live_data(db: Session = Depends(get_db)):
         "pm25_actual": latest_log.pm25_actual,
         "pm25_predicted": latest_log.pm25_predicted,
         "vehicle_count": latest_log.vehicle_count,
-        "primary_source": latest_log.primary_source
+        "primary_source": latest_log.primary_source,
+        "shap_pm25": latest_log.shap_pm25,
+        "shap_heating": latest_log.shap_heating,
+        "shap_traffic": latest_log.shap_traffic,
     }
 
 @router.get("/api/forecast")
