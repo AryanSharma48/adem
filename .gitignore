@@ -19,3 +19,5 @@ yolov8n.pt
 *.pkl
 runs/
 PROJECT_CONTEXT.md
+
+node_modules/

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AirGuard Astana - Preview</title>
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React and ReactDOM CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- Babel CDN for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- Inline SVG Icons to remain dependency-free and 100% reliable ---
+    const ShieldIcon = () => (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    );
+
+    const BellIcon = () => (
+      <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+      </svg>
+    );
+
+    const CloudSunIcon = () => (
+      <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1.5M12 19.5V21M4.22 4.22l1.06 1.06M17.72 17.72l1.06 1.06M3 12h1.5M19.5 12H21M5.28 17.72l1.06-1.06M18.78 5.28l-1.06 1.06m-4.72-2.28a7 7 0 11-7 7 7 7 0 017-7z" />
+      </svg>
+    );
+
+    const InfoIcon = () => (
+      <svg className="w-3.5 h-3.5 ml-1.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.083.984l-.04.02-2.24 1.402a.75.75 0 00-.332.96l.04.08 1.485 2.784a.75.75 0 001.32-.083l.04-.08 1.402-2.242a.75.75 0 00-.083-1.32l-.08-.04-2.784-1.485a.75.75 0 00-.96.332l-.02.04zM12 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" />
+      </svg>
+    );
+
+    const CarIcon = () => (
+      <svg className="w-4 h-4 mx-auto text-emerald-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.75a1.125 1.125 0 01-1.125-1.125V15h16.5v2.625c0 .621-.504 1.125-1.125 1.125H16.5m-3-3.75v-3.75m0 3.75h3.75m-3 0H9.75m-3 0h3m-3 0v-3.75" />
+      </svg>
+    );
+
+    const BusIcon = () => (
+      <svg className="w-4 h-4 mx-auto text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    );
+
+    const TruckIcon = () => (
+      <svg className="w-4 h-4 mx-auto text-purple-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.75a1.125 1.125 0 01-1.125-1.125V15h16.5v2.625c0 .621-.504 1.125-1.125 1.125H16.5m0 0v-9H12m0 0v9m0-9V6a1.5 1.5 0 00-1.5-1.5h-3A1.5 1.5 0 006 6v3" />
+      </svg>
+    );
+
+    const TriangleAlertIcon = () => (
+      <svg className="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+      </svg>
+    );
+
+    const SendIcon = () => (
+      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+      </svg>
+    );
+
+    const CheckIcon = () => (
+      <svg className="w-4 h-4 ml-2 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+
+    // --- Sidebar ---
+    function Sidebar() {
+      const items = ['Overview', 'Map', 'Forecast', 'Sources', 'Traffic', 'Alerts', 'About'];
+      return (
+        <div className="w-64 bg-[#0f172a] text-slate-300 h-screen flex flex-col justify-between hidden md:flex border-r border-slate-800">
+          <div>
+            <div className="p-6 flex items-center space-x-3 text-white">
+              <div className="bg-blue-600 p-1.5 rounded-lg">
+                <ShieldIcon />
+              </div>
+              <div>
+                <h1 className="font-bold text-lg leading-tight">AirGuard</h1>
+                <p className="text-xs text-slate-400">Astana</p>
+              </div>
+            </div>
+
+            <nav className="mt-4 space-y-1 px-3">
+              {items.map((item, index) => (
+                <a
+                  key={item}
+                  href="#"
+                  className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    index === 0
+                      ? 'bg-blue-600 text-white'
+                      : 'hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <span className="mr-3">{item}</span>
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <div className="p-6">
+            <div className="bg-[#1e293b] rounded-xl p-4 border border-slate-800">
+              <div className="text-emerald-400 mb-2">
+                <ShieldIcon />
+              </div>
+              <p className="text-sm font-medium text-white mb-2">Protect your health. Protect our future.</p>
+              <p className="text-xs text-slate-400">AirGuard Astana is an open-source initiative for a cleaner, healthier city.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TopNav ---
+    function TopNav() {
+      return (
+        <div className="bg-white border-b border-slate-200 h-20 px-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+              Good morning, Astana
+              <div className="ml-4 flex items-center text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                <CloudSunIcon />
+                -12°C
+              </div>
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">Real-time air quality across the city</p>
+          </div>
+
+          <div className="flex items-center space-x-6">
+            <div className="relative">
+              <BellIcon />
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-slate-500">Last updated</p>
+              <p className="text-sm font-bold text-blue-600">10:30 AM</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- AirQualityOverview Map Card ---
+    function AirQualityOverview() {
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Live Air Quality Map</h3>
+              <div className="flex items-center text-sm mt-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                <span className="text-emerald-600 font-medium mr-2">Live</span>
+                <span className="text-slate-500">193 government sensors</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex-1 bg-slate-50 rounded-xl relative overflow-hidden border border-slate-100 flex items-center justify-center min-h-[350px]">
+            <div className="absolute inset-0 opacity-20 bg-[url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg')] bg-cover bg-center"></div>
+            <div className="z-10 text-center">
+               <h4 className="font-bold text-2xl text-slate-800 tracking-wider">Astana</h4>
+               <p className="text-xs text-slate-400 mt-1">Interactive Air Quality Map</p>
+            </div>
+            
+            <div className="absolute top-1/4 left-1/4 w-3.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.7)] animate-pulse"></div>
+            <div className="absolute top-1/3 left-1/2 w-3.5 h-3.5 rounded-full bg-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.7)]"></div>
+            <div className="absolute top-1/2 left-2/3 w-3.5 h-3.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)] animate-ping"></div>
+            <div className="absolute top-1/2 left-2/3 w-3.5 h-3.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)]"></div>
+            <div className="absolute top-2/3 left-1/3 w-3.5 h-3.5 rounded-full bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.7)]"></div>
+
+            <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-slate-100 shadow-sm">
+              <p className="text-xs font-bold text-slate-700 mb-2">AQI (PM2.5)</p>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Good <span className="ml-auto text-slate-400 pl-4">0-25</span></div>
+                <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2"></span> Moderate <span className="ml-auto text-slate-400 pl-4">26-50</span></div>
+                <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2"></span> Unhealthy <span className="ml-auto text-slate-400 pl-4">51-100</span></div>
+                <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-red-500 mr-2"></span> Very Unhealthy <span className="ml-auto text-slate-400 pl-4">101-150</span></div>
+                <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-purple-600 mr-2"></span> Hazardous <span className="ml-auto text-slate-400 pl-4">150+</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TomorrowAlert Card ---
+    function TomorrowAlert() {
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="flex items-center text-red-500 font-bold mb-4">
+            <TriangleAlertIcon />
+            Tomorrow's Air Quality Alert
+          </div>
+          
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-sm font-semibold text-slate-500 mb-1">Northeast District</p>
+              <h2 className="text-3xl font-black text-slate-900 mb-1">Unhealthy</h2>
+              <p className="text-lg font-medium text-slate-700 mb-4">
+                PM2.5 <span className="font-bold text-slate-900">78</span> µg/m³
+              </p>
+              <div className="inline-block bg-red-50 text-red-600 font-medium px-3 py-1 rounded-md text-sm mb-4">
+                7:00 AM – 10:00 AM
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Limit outdoor activity for children, elderly and people with respiratory conditions.
+              </p>
+            </div>
+            
+            <div className="w-32 h-24 relative hidden md:block">
+               <svg className="w-full h-full overflow-visible" viewBox="0 0 100 50">
+                 <defs>
+                   <linearGradient id="alertGrad" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4"/>
+                     <stop offset="100%" stopColor="#ef4444" stopOpacity="0"/>
+                   </linearGradient>
+                 </defs>
+                 <path d="M0,40 Q25,40 40,25 T70,5 T100,30 L100,50 L0,50 Z" fill="url(#alertGrad)" />
+                 <path d="M0,40 Q25,40 40,25 T70,5 T100,30" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+                 <circle cx="70" cy="5" r="4.5" fill="#ef4444" stroke="#fff" strokeWidth="1.5" />
+                 <text x="70" y="-8" textAnchor="middle" fill="#ef4444" fontSize="11" fontWeight="bold">78</text>
+               </svg>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- PollutionSources Chart ---
+    function PollutionSources() {
+      const data = [
+        { name: 'Heating (Coal)', value: 61, color: '#ef4444' },
+        { name: 'Traffic', value: 31, color: '#f59e0b' },
+        { name: 'Industrial', value: 8, color: '#8b5cf6' },
+      ];
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-bold text-slate-900">Why Tomorrow Will Be Unhealthy</h3>
+          <p className="text-sm text-slate-500 mb-6">Source attribution for predicted pollution</p>
+          
+          <div className="flex items-center">
+            <div className="w-1/2 h-[160px] relative flex items-center justify-center">
+              {/* Circular SVG Donut Chart */}
+              <svg className="w-36 h-36 transform -rotate-90">
+                <circle cx="72" cy="72" r="50" fill="transparent" stroke="#f1f5f9" strokeWidth="16" />
+                {/* Coal (61% = stroke-dasharray="191.6 314") */}
+                <circle cx="72" cy="72" r="50" fill="transparent" stroke="#ef4444" strokeWidth="16" strokeDasharray="191.6 314" strokeDashoffset="0" />
+                {/* Traffic (31% = stroke-dasharray="97.3 314") */}
+                <circle cx="72" cy="72" r="50" fill="transparent" stroke="#f59e0b" strokeWidth="16" strokeDasharray="97.3 314" strokeDashoffset="-191.6" />
+                {/* Industrial (8% = stroke-dasharray="25.1 314") */}
+                <circle cx="72" cy="72" r="50" fill="transparent" stroke="#8b5cf6" strokeWidth="16" strokeDasharray="25.1 314" strokeDashoffset="-288.9" />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center">
+                <span className="text-2xl font-black text-slate-900">78</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PM2.5</span>
+              </div>
+            </div>
+            
+            <div className="w-1/2 pl-6">
+              <div className="space-y-4">
+                {data.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <span className="w-3 h-3 rounded-full mr-3" style={{ backgroundColor: item.color }}></span>
+                      <span className="text-xs font-semibold text-slate-600">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-bold text-slate-900">{item.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center text-xs text-slate-400">
+            AI Model: AirGuard v1.0
+            <InfoIcon />
+          </div>
+        </div>
+      );
+    }
+
+    // --- ForecastChart SVG Implementation (Smooth Gradient & Interactive) ---
+    function ForecastChart() {
+      const times = ["12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM", "12 AM"];
+      const values = [15, 14, 20, 35, 60, 78, 65, 40, 22];
+      
+      // Calculate SVG points based on container dimensions
+      const points = values.map((val, idx) => {
+        const x = (idx / 8) * 600 + 40;
+        const y = 200 - (val / 100) * 160;
+        return { x, y, val, time: times[idx] };
+      });
+      
+      const pathD = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+      const areaD = `${pathD} L ${points[points.length-1].x} 200 L ${points[0].x} 200 Z`;
+
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-slate-900">24-Hour Air Quality Forecast</h3>
+            <div className="flex space-x-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Good</div>
+              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2"></span> Moderate</div>
+              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2"></span> Unhealthy</div>
+              <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-red-500 mr-2"></span> Very Unhealthy</div>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full relative min-h-[250px]">
+            <p className="text-[10px] font-bold text-slate-400 absolute -top-4 left-0">PM2.5 µg/m³</p>
+            
+            <svg className="w-full h-full overflow-visible" viewBox="0 0 680 220">
+              <defs>
+                <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3"/>
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0"/>
+                </linearGradient>
+              </defs>
+              
+              {/* Horizontal Grid lines */}
+              {[0, 25, 50, 75, 100].map(val => {
+                const y = 200 - (val / 100) * 160;
+                return (
+                  <g key={val}>
+                    <line x1="40" y1={y} x2="640" y2={y} stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4" />
+                    <text x="15" y={y + 4} fill="#94a3b8" fontSize="10" fontWeight="600">{val}</text>
+                  </g>
+                );
+              })}
+              
+              {/* Area & Stroke */}
+              <path d={areaD} fill="url(#forecastGrad)" />
+              <path d={pathD} fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" />
+              
+              {/* Dots */}
+              {points.map((p, idx) => (
+                <g key={idx} className="group cursor-pointer">
+                  <circle cx={p.x} cy={p.y} r="5" fill="#fff" stroke="#ef4444" strokeWidth="2.5" />
+                  <circle cx={p.x} cy={p.y} r="8" fill="#ef4444" className="opacity-0 group-hover:opacity-20 transition-opacity" />
+                  {/* Tooltip on hover */}
+                  <text x={p.x} y={p.y - 12} textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="bold" className="opacity-0 group-hover:opacity-100 transition-opacity bg-white px-1.5 py-0.5 rounded border shadow-sm">
+                    {p.val}
+                  </text>
+                </g>
+              ))}
+              
+              {/* Vertical Reference Line for Alert */}
+              <line x1={points[5].x} y1="40" x2={points[5].x} y2="200" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4" />
+              <circle cx={points[5].x} cy={points[5].y} r="6" fill="#ef4444" />
+              <text x={points[5].x} y="30" textAnchor="middle" fill="#ef4444" fontSize="10" fontWeight="bold">Tomorrow 3:00 PM</text>
+              <rect x={points[5].x - 12} y={points[5].y - 28} width="24" height="18" rx="4" fill="#ef4444" />
+              <text x={points[5].x} y={points[5].y - 15} textAnchor="middle" fill="#fff" fontSize="10" fontWeight="bold">78</text>
+
+              {/* X Axis Labels */}
+              {points.map((p, idx) => (
+                <text key={idx} x={p.x} y="218" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="600">{p.time}</text>
+              ))}
+            </svg>
+          </div>
+        </div>
+      );
+    }
+
+    // --- TrafficCount Card ---
+    function TrafficCount() {
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-slate-900">Live Traffic Count</h3>
+            <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Right now</span>
+          </div>
+          
+          <div className="flex gap-4 h-[130px]">
+            <div className="w-1/2 h-full rounded-xl overflow-hidden relative group border border-slate-200">
+              <img 
+                 src="https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=400&h=300" 
+                 alt="Traffic Camera"
+                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute top-[35%] left-[25%] w-8 h-8 border-2 border-emerald-400 rounded bg-emerald-400/20"></div>
+              <div className="absolute top-[55%] left-[45%] w-10 h-10 border-2 border-emerald-400 rounded bg-emerald-400/20"></div>
+              <div className="absolute top-[25%] left-[60%] w-12 h-14 border-2 border-blue-400 rounded bg-blue-400/20"></div>
+            </div>
+            
+            <div className="w-1/2 flex flex-col justify-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Vehicles Counted</p>
+              <div className="flex items-baseline mb-4">
+                <span className="text-3xl font-black text-slate-900 mr-2">1,246</span>
+                <span className="text-xs font-medium text-slate-500">v / 5 min</span>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-1 text-center">
+                <div className="bg-slate-50 rounded-lg p-1">
+                  <CarIcon />
+                  <p className="text-[9px] font-semibold text-slate-500">Cars</p>
+                  <p className="text-xs font-bold text-slate-800">978</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-1">
+                  <BusIcon />
+                  <p className="text-[9px] font-semibold text-slate-500">Buses</p>
+                  <p className="text-xs font-bold text-slate-800">156</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-1">
+                  <TruckIcon />
+                  <p className="text-[9px] font-semibold text-slate-500">Trucks</p>
+                  <p className="text-xs font-bold text-slate-800">112</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-4 flex items-center text-xs font-bold text-emerald-600">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+            Feeds into air quality forecast
+          </div>
+        </div>
+      );
+    }
+
+    // --- TelegramAlertStatus Banner ---
+    function TelegramAlertStatus() {
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="bg-blue-500 p-3 rounded-xl text-white shadow-md shadow-blue-500/20">
+              <SendIcon />
+            </div>
+            <div>
+              <div className="flex items-center">
+                <h3 className="font-bold text-slate-900 mr-3">Telegram Alert System</h3>
+                <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">Automatic alerts sent to 12,543 subscribers</p>
+            </div>
+          </div>
+          
+          <div className="hidden lg:flex items-center bg-yellow-50 text-yellow-800 px-4 py-2 rounded-lg text-sm border border-yellow-100 max-w-2xl">
+            <TriangleAlertIcon />
+            <span className="font-semibold mr-1">Air quality warning —</span> Astana northeast, tomorrow 7–10am. 
+            <span className="ml-1 text-slate-600">Limit outdoor activity for children and elderly.</span>
+          </div>
+          
+          <div className="flex items-center text-sm font-semibold text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+            Sent 10:30 AM <CheckIcon />
+          </div>
+        </div>
+      );
+    }
+
+    // --- Main App Component ---
+    function App() {
+      return (
+        <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
+          <Sidebar />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <TopNav />
+            <main className="flex-1 overflow-y-auto p-6 md:p-8">
+              <div className="max-w-7xl mx-auto flex flex-col space-y-6 pb-12">
+                
+                {/* Grid row 1 */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  <div className="xl:col-span-2">
+                    <AirQualityOverview />
+                  </div>
+                  <div className="flex flex-col space-y-6">
+                    <TomorrowAlert />
+                    <PollutionSources />
+                  </div>
+                </div>
+
+                {/* Grid row 2 */}
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  <div className="xl:col-span-2">
+                    <ForecastChart />
+                  </div>
+                  <div className="xl:col-span-1">
+                    <TrafficCount />
+                  </div>
+                </div>
+
+                {/* Telegram Alert bar */}
+                <TelegramAlertStatus />
+
+              </div>
+            </main>
+          </div>
+        </div>
+      );
+    }
+
+    // --- Mount React ---
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>
