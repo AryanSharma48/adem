@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 export default function TomorrowAlert({ liveData, loading }) {
@@ -42,7 +42,7 @@ export default function TomorrowAlert({ liveData, loading }) {
   let statusClass = "text-red-500";
   let alertBadgeClass = "bg-red-50 text-red-600 border border-red-100";
   
-  if (pm25 <= 25) {
+  if (pm25 <= 15) {
     statusText = "Good";
     statusClass = "text-emerald-500";
     alertBadgeClass = "bg-emerald-50 text-emerald-600 border border-emerald-100";
@@ -60,9 +60,14 @@ export default function TomorrowAlert({ liveData, loading }) {
     alertBadgeClass = "bg-purple-50 text-purple-600 border border-purple-100";
   }
 
-  const formattedTime = liveData.timestamp 
-    ? new Date(liveData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : "7:00 AM – 10:00 AM";
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 card-hover flex flex-col justify-between min-h-[216px]">

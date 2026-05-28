@@ -5,6 +5,7 @@ import axios from 'axios';
 export default function TopNav({ liveData, loading, onMenuToggle }) {
   const [temperature, setTemperature] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const fetchTemperature = async () => {
@@ -21,11 +22,25 @@ export default function TopNav({ liveData, loading, onMenuToggle }) {
       }
     };
     fetchTemperature();
+
+    const timeTimer = setInterval(() => setCurrentTime(new Date()), 60000);
+    const tempTimer = setInterval(fetchTemperature, 300000); // refresh every 5 mins
+    
+    return () => {
+      clearInterval(timeTimer);
+      clearInterval(tempTimer);
+    };
   }, []);
 
-  const formattedTime = liveData && liveData.timestamp 
-    ? new Date(liveData.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : "10:30 AM";
+  const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const currentHour = new Date().getHours();
+  let greeting = "Good evening";
+  if (currentHour >= 4 && currentHour < 12) {
+    greeting = "Good morning";
+  } else if (currentHour >= 12 && currentHour < 17) {
+    greeting = "Good afternoon";
+  }
 
   return (
     <div className="bg-white border-b border-slate-200 h-20 px-4 md:px-8 flex items-center justify-between">
@@ -41,7 +56,7 @@ export default function TopNav({ liveData, loading, onMenuToggle }) {
 
         <div>
           <h2 className="text-lg md:text-2xl font-bold text-slate-900 flex items-center">
-            <span className="hidden sm:inline">Good morning, </span>Astana
+            {greeting}, Astana
             <div className="ml-3 flex items-center text-xs md:text-sm font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full">
               <CloudSun className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5 text-blue-500" />
               {weatherLoading ? (
@@ -58,10 +73,6 @@ export default function TopNav({ liveData, loading, onMenuToggle }) {
       </div>
 
       <div className="flex items-center space-x-4 md:space-x-6">
-        <div className="relative cursor-pointer p-1.5 rounded-full hover:bg-slate-100 transition-all">
-          <Bell className="w-5 h-5 text-slate-600" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-        </div>
         <div className="text-right">
           <p className="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider">Last updated</p>
           {loading ? (

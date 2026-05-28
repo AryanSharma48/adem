@@ -71,6 +71,12 @@ export default function ForecastChart() {
     );
   }
 
+  let peakTime = null;
+  if (data.length > 0) {
+    const peakIndex = data.reduce((maxIdx, curr, idx, arr) => curr.pm25 > arr[maxIdx].pm25 ? idx : maxIdx, 0);
+    peakTime = data[peakIndex].time;
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px] card-hover">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -117,12 +123,12 @@ export default function ForecastChart() {
               dot={{ r: 3, strokeWidth: 1.5, fill: "#fff", stroke: "#ef4444" }}
               activeDot={{ r: 5, fill: "#ef4444", stroke: "#fff", strokeWidth: 2 }}
             />
-            {data.length > 5 && (
+            {peakTime && (
               <ReferenceLine 
-                x={data[Math.min(data.length - 1, 15)]?.time} 
+                x={peakTime} 
                 stroke="#ef4444" 
                 strokeDasharray="3 3" 
-                label={{ position: 'bottom', value: 'Predicted Alert', fill: '#ef4444', fontSize: 9, fontWeight: 'black' }} 
+                label={{ position: 'bottom', value: 'Peak Prediction', fill: '#ef4444', fontSize: 9, fontWeight: 'black' }} 
               />
             )}
           </AreaChart>

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 
 const getAqiColorClass = (val) => {
-  if (val <= 25) return 'bg-emerald-500';
+  if (val <= 15) return 'bg-emerald-500';
   if (val <= 50) return 'bg-yellow-400';
   if (val <= 100) return 'bg-orange-500';
   if (val <= 150) return 'bg-red-500';
@@ -11,7 +11,7 @@ const getAqiColorClass = (val) => {
 };
 
 const getAqiTextClass = (val) => {
-  if (val <= 25) return 'text-emerald-600';
+  if (val <= 15) return 'text-emerald-600';
   if (val <= 50) return 'text-yellow-600';
   if (val <= 100) return 'text-orange-600';
   if (val <= 150) return 'text-red-600';
@@ -19,7 +19,7 @@ const getAqiTextClass = (val) => {
 };
 
 const getAqiCategory = (val) => {
-  if (val <= 25) return 'Good';
+  if (val <= 15) return 'Good';
   if (val <= 50) return 'Moderate';
   if (val <= 100) return 'Unhealthy';
   if (val <= 150) return 'Very Unhealthy';
@@ -43,7 +43,7 @@ const createCustomIcon = (pm25) => {
 export default function AirQualityOverview({ liveData, loading }) {
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[480px]">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="space-y-2.5 w-1/3">
             <div className="h-6 w-full bg-slate-200 rounded skeleton"></div>
@@ -61,7 +61,7 @@ export default function AirQualityOverview({ liveData, loading }) {
   // Handle case where API is down or empty
   if (!liveData) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[480px] items-center justify-center text-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full items-center justify-center text-center">
         <div className="p-4 bg-red-50 text-red-500 rounded-full mb-4">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -112,7 +112,7 @@ export default function AirQualityOverview({ liveData, loading }) {
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[480px] card-hover">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full card-hover">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-bold text-slate-900">Live Air Quality Map</h3>
@@ -171,14 +171,14 @@ export default function AirQualityOverview({ liveData, loading }) {
         </MapContainer>
 
         {/* Floating Legend Overlay */}
-        <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl border border-slate-200 shadow-lg z-[1000] max-w-[160px] hidden sm:block">
-          <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider mb-2">AQI Legend (PM2.5)</p>
-          <div className="space-y-1.5 text-[10px] font-bold text-slate-600">
-            <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Good <span className="ml-auto text-slate-400">0-25</span></div>
-            <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2"></span> Moderate <span className="ml-auto text-slate-400">26-50</span></div>
-            <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-2"></span> Unhealthy <span className="ml-auto text-slate-400">51-100</span></div>
-            <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-red-500 mr-2"></span> Very Unhealthy <span className="ml-auto text-slate-400">101-150</span></div>
-            <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-purple-600 mr-2"></span> Hazardous <span className="ml-auto text-slate-400">150+</span></div>
+        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm p-3 rounded-lg border border-slate-200 shadow-lg z-[1000] hidden sm:block whitespace-nowrap">
+          <p className="text-[9px] font-black text-slate-700 uppercase tracking-wider mb-2">AQI Legend (PM2.5)</p>
+          <div className="space-y-1.5 text-[10px] font-bold text-slate-600 w-full">
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Good</div> <span className="text-slate-400">0-15</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span> Moderate</div> <span className="text-slate-400">16-50</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-orange-500 mr-2"></span> Unhealthy</div> <span className="text-slate-400">51-100</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span> Very Unhealthy</div> <span className="text-slate-400">101-150</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-purple-600 mr-2"></span> Hazardous</div> <span className="text-slate-400">150+</span></div>
           </div>
         </div>
       </div>

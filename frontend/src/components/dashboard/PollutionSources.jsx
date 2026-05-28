@@ -8,6 +8,18 @@ const defaultData = [
   { name: 'Industrial', value: 8, color: '#8b5cf6' },
 ];
 
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: payload[0].payload.color }}></span>
+        <span>{payload[0].name} <span className="text-slate-900 ml-0.5">{payload[0].value}%</span></span>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function PollutionSources({ liveData, loading }) {
   if (loading) {
     return (
@@ -42,6 +54,19 @@ export default function PollutionSources({ liveData, loading }) {
   const isAvailable = liveData.primary_source !== undefined;
   const primarySource = isAvailable ? liveData.primary_source : 'heating';
   const pm25 = liveData.pm25_predicted !== undefined ? Math.round(liveData.pm25_predicted) : 78;
+
+  let statusText = "Unhealthy";
+  if (pm25 <= 15) {
+    statusText = "Good";
+  } else if (pm25 <= 50) {
+    statusText = "Moderate";
+  } else if (pm25 <= 100) {
+    statusText = "Unhealthy";
+  } else if (pm25 <= 150) {
+    statusText = "Very Unhealthy";
+  } else {
+    statusText = "Hazardous";
+  }
 
   // Use SHAP values from backend when available
   const hasShap = liveData.shap_heating !== null && liveData.shap_traffic !== null && liveData.shap_pm25 !== null && 
@@ -84,7 +109,7 @@ export default function PollutionSources({ liveData, loading }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 card-hover min-h-[288px] flex flex-col justify-between">
       <div>
-        <h3 className="text-lg font-bold text-slate-900">Why Tomorrow Will Be Unhealthy</h3>
+        <h3 className="text-lg font-bold text-slate-900">Why Tomorrow Will Be {statusText}</h3>
         <p className="text-sm text-slate-500 mb-4">Source attribution for predicted pollution</p>
         
         <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-6">
@@ -105,10 +130,7 @@ export default function PollutionSources({ liveData, loading }) {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip 
-                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                   itemStyle={{ fontWeight: 'bold' }}
-                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
               </PieChart>
             </ResponsiveContainer>
             {/* Inner Text */}
