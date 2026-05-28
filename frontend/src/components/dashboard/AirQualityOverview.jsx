@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -26,12 +27,43 @@ const getAqiCategory = (val) => {
   return 'Hazardous';
 };
 
-const createCustomIcon = (pm25) => {
-  const colorClass = getAqiColorClass(pm25);
+const getUsAqiColorClass = (val) => {
+  if (val <= 50) return 'bg-emerald-500';
+  if (val <= 100) return 'bg-yellow-400';
+  if (val <= 150) return 'bg-orange-500';
+  if (val <= 200) return 'bg-red-500';
+  return 'bg-purple-600';
+};
+
+const getUsAqiTextClass = (val) => {
+  if (val <= 50) return 'text-emerald-600';
+  if (val <= 100) return 'text-yellow-600';
+  if (val <= 150) return 'text-orange-600';
+  if (val <= 200) return 'text-red-600';
+  return 'text-purple-700';
+};
+
+const getUsAqiCategory = (val) => {
+  if (val <= 50) return 'Good';
+  if (val <= 100) return 'Moderate';
+  if (val <= 150) return 'Unhealthy (Sens.)';
+  if (val <= 200) return 'Unhealthy';
+  return 'Hazardous';
+};
+
+const calcAqi = (pm25) => {
+  if (pm25 <= 12) return Math.round((50/12) * pm25);
+  if (pm25 <= 35.4) return Math.round(((100-51)/(35.4-12.1)) * (pm25 - 12.1) + 51);
+  if (pm25 <= 55.4) return Math.round(((150-101)/(55.4-35.5)) * (pm25 - 35.5) + 101);
+  if (pm25 <= 150.4) return Math.round(((200-151)/(150.4-55.5)) * (pm25 - 55.5) + 151);
+  return Math.round(((300-201)/(250.4-150.5)) * (pm25 - 150.5) + 201);
+};
+
+const createCustomIcon = (value, colorClass) => {
   return L.divIcon({
     html: `<div class="relative flex items-center justify-center">
              <div class="absolute w-8 h-8 rounded-full ${colorClass} opacity-30 animate-ping"></div>
-             <div class="relative w-6 h-6 rounded-full border-2 border-white ${colorClass} shadow-lg shadow-black/20 flex items-center justify-center text-[10px] text-white font-black">${Math.round(pm25)}</div>
+             <div class="relative w-6 h-6 rounded-full border-2 border-white ${colorClass} shadow-lg shadow-black/20 flex items-center justify-center text-[10px] text-white font-black">${Math.round(value)}</div>
            </div>`,
     className: 'custom-leaflet-icon',
     iconSize: [32, 32],
@@ -41,6 +73,34 @@ const createCustomIcon = (pm25) => {
 };
 
 export default function AirQualityOverview({ liveData, loading }) {
+  const [displayMode, setDisplayMode] = useState('PM2.5');
+  
+  const [nearbyCities, setNearbyCities] = useState([
+    { name: "Saryarka District (West)", lat: 51.1685, lng: 71.4082, pm25: null, aqi: null, isLive: true },
+    { name: "Almaty District (Northeast)", lat: 51.1833, lng: 71.4667, pm25: null, aqi: null, isLive: true },
+    { name: "Nursultan District (Southwest)", lat: 51.1282, lng: 71.4305, pm25: null, aqi: null, isLive: true }
+  ]);
+
+  useEffect(() => {
+    const fetchNearby = async () => {
+      try {
+        const res = await axios.get("https://air-quality-api.open-meteo.com/v1/air-quality?latitude=51.1685,51.1833,51.1282&longitude=71.4082,71.4667,71.4305&current=pm2_5,us_aqi");
+        if (Array.isArray(res.data)) {
+          setNearbyCities(prev => [
+            { ...prev[0], pm25: res.data[0]?.current?.pm2_5, aqi: res.data[0]?.current?.us_aqi },
+            { ...prev[1], pm25: res.data[1]?.current?.pm2_5, aqi: res.data[1]?.current?.us_aqi },
+            { ...prev[2], pm25: res.data[2]?.current?.pm2_5, aqi: res.data[2]?.current?.us_aqi }
+          ]);
+        }
+      } catch (err) {
+        console.error("Error fetching nearby districts AQI:", err);
+      }
+    };
+    fetchNearby();
+    const interval = setInterval(fetchNearby, 300000); // refresh every 5 mins
+    return () => clearInterval(interval);
+  }, []);
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
@@ -75,45 +135,29 @@ export default function AirQualityOverview({ liveData, loading }) {
     );
   }
 
+  const isPM = displayMode === 'PM2.5';
   const livePM25 = liveData.pm25_actual !== null ? liveData.pm25_actual : 0.0;
-  const aqiColorClass = getAqiColorClass(livePM25);
-  const aqiTextClass = getAqiTextClass(livePM25);
-  const aqiCategory = getAqiCategory(livePM25);
+  const liveAQI = calcAqi(livePM25);
+  
+  const aqiColorClass = isPM ? getAqiColorClass(livePM25) : getUsAqiColorClass(liveAQI);
+  const aqiTextClass = isPM ? getAqiTextClass(livePM25) : getUsAqiTextClass(liveAQI);
+  const aqiCategory = isPM ? getAqiCategory(livePM25) : getUsAqiCategory(liveAQI);
 
   const stations = [
     {
       name: liveData.district || "Astana Center",
       lat: 51.1694,
       lng: 71.4206,
-      value: livePM25,
+      pm25: livePM25,
+      aqi: liveAQI,
       isLive: true
     },
-    {
-      name: "Saryarka District (West)",
-      lat: 51.1685,
-      lng: 71.4082,
-      value: Math.round(livePM25 * 0.95 * 10) / 10,
-      isLive: false
-    },
-    {
-      name: "Almaty District (Northeast)",
-      lat: 51.1833,
-      lng: 71.4667,
-      value: Math.round(livePM25 * 1.15 * 10) / 10,
-      isLive: false
-    },
-    {
-      name: "Nursultan District (Southwest)",
-      lat: 51.1282,
-      lng: 71.4305,
-      value: Math.round(livePM25 * 0.85 * 10) / 10,
-      isLive: false
-    }
+    ...nearbyCities.filter(city => city.pm25 !== null)
   ];
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full card-hover">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
         <div>
           <h3 className="text-lg font-bold text-slate-900">Live Air Quality Map</h3>
           <div className="flex items-center text-sm mt-1">
@@ -123,10 +167,26 @@ export default function AirQualityOverview({ liveData, loading }) {
           </div>
         </div>
 
-        {/* Global AQI Badge for Astana Center */}
-        <div className={`px-4 py-1.5 rounded-full border text-sm font-extrabold flex items-center bg-slate-50 ${aqiTextClass}`}>
-          <span className={`w-2.5 h-2.5 rounded-full mr-2 ${aqiColorClass}`}></span>
-          {aqiCategory} ({Math.round(livePM25)} µg/m³)
+        <div className="flex items-center gap-4">
+          <div className="flex bg-slate-100 p-1 rounded-lg">
+            <button 
+              onClick={() => setDisplayMode('PM2.5')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${displayMode === 'PM2.5' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              PM2.5
+            </button>
+            <button 
+              onClick={() => setDisplayMode('AQI')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${displayMode === 'AQI' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              AQI
+            </button>
+          </div>
+          {/* Global AQI Badge for Astana Center */}
+          <div className={`px-4 py-1.5 rounded-full border text-sm font-extrabold flex items-center bg-slate-50 hidden sm:flex ${aqiTextClass}`}>
+            <span className={`w-2.5 h-2.5 rounded-full mr-2 ${aqiColorClass}`}></span>
+            {aqiCategory} ({Math.round(isPM ? livePM25 : liveAQI)} {isPM ? 'µg/m³' : 'AQI'})
+          </div>
         </div>
       </div>
       
@@ -142,43 +202,51 @@ export default function AirQualityOverview({ liveData, loading }) {
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
-          {stations.map((station, idx) => (
-            <Marker 
-              key={idx}
-              position={[station.lat, station.lng]}
-              icon={createCustomIcon(station.value)}
-            >
-              <Popup>
-                <div className="p-1 font-sans">
-                  <h4 className="font-extrabold text-sm text-slate-900 mb-1">{station.name}</h4>
-                  <p className="text-xs text-slate-500 mb-2">
-                    Station Type: <span className="font-semibold text-blue-600">{station.isLive ? "Primary Sensor (Live)" : "Satellite Station"}</span>
-                  </p>
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                    <span className="text-xs text-slate-600 font-semibold">PM2.5:</span>
-                    <span className="text-xs font-black text-slate-900">{station.value} µg/m³</span>
+          {stations.map((station, idx) => {
+            const val = isPM ? station.pm25 : station.aqi;
+            const colorClass = isPM ? getAqiColorClass(val) : getUsAqiColorClass(val);
+            const textClass = isPM ? getAqiTextClass(val) : getUsAqiTextClass(val);
+            const cat = isPM ? getAqiCategory(val) : getUsAqiCategory(val);
+            const unit = isPM ? 'µg/m³' : 'Index';
+
+            return (
+              <Marker 
+                key={idx}
+                position={[station.lat, station.lng]}
+                icon={createCustomIcon(val, colorClass)}
+              >
+                <Popup>
+                  <div className="p-1 font-sans">
+                    <h4 className="font-extrabold text-sm text-slate-900 mb-1">{station.name}</h4>
+                    <p className="text-xs text-slate-500 mb-2">
+                      Station Type: <span className="font-semibold text-blue-600">{station.isLive ? "Primary Sensor (Live)" : "Satellite Station"}</span>
+                    </p>
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                      <span className="text-xs text-slate-600 font-semibold">{displayMode}:</span>
+                      <span className="text-xs font-black text-slate-900">{Math.round(val)} {unit}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-slate-600 font-semibold">Status:</span>
+                      <span className={`text-xs font-black ${textClass}`}>
+                        {cat}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-xs text-slate-600 font-semibold">Status:</span>
-                    <span className={`text-xs font-black ${getAqiTextClass(station.value)}`}>
-                      {getAqiCategory(station.value)}
-                    </span>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                </Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
 
         {/* Floating Legend Overlay */}
         <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm p-3 rounded-lg border border-slate-200 shadow-lg z-[1000] hidden sm:block whitespace-nowrap">
-          <p className="text-[9px] font-black text-slate-700 uppercase tracking-wider mb-2">AQI Legend (PM2.5)</p>
+          <p className="text-[9px] font-black text-slate-700 uppercase tracking-wider mb-2">{isPM ? 'AQI Legend (PM2.5)' : 'AQI Legend (US AQI)'}</p>
           <div className="space-y-1.5 text-[10px] font-bold text-slate-600 w-full">
-            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Good</div> <span className="text-slate-400">0-15</span></div>
-            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span> Moderate</div> <span className="text-slate-400">16-50</span></div>
-            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-orange-500 mr-2"></span> Unhealthy</div> <span className="text-slate-400">51-100</span></div>
-            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span> Very Unhealthy</div> <span className="text-slate-400">101-150</span></div>
-            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-purple-600 mr-2"></span> Hazardous</div> <span className="text-slate-400">150+</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Good</div> <span className="text-slate-400">{isPM ? '0-15' : '0-50'}</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span> Moderate</div> <span className="text-slate-400">{isPM ? '16-50' : '51-100'}</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-orange-500 mr-2"></span> {isPM ? 'Unhealthy' : 'Unhealthy (Sens.)'}</div> <span className="text-slate-400">{isPM ? '51-100' : '101-150'}</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span> {isPM ? 'Very Unhealthy' : 'Unhealthy'}</div> <span className="text-slate-400">{isPM ? '101-150' : '151-200'}</span></div>
+            <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-purple-600 mr-2"></span> Hazardous</div> <span className="text-slate-400">{isPM ? '150+' : '200+'}</span></div>
           </div>
         </div>
       </div>

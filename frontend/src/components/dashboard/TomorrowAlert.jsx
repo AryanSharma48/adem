@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 
 export default function TomorrowAlert({ liveData, loading }) {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between h-[216px]">
@@ -59,13 +66,6 @@ export default function TomorrowAlert({ liveData, loading }) {
     statusClass = "text-purple-600";
     alertBadgeClass = "bg-purple-50 text-purple-600 border border-purple-100";
   }
-
-  const [currentTime, setCurrentTime] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
-  }, []);
 
   const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 

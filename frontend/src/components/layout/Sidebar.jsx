@@ -1,11 +1,12 @@
 import React from 'react';
 import { Home, Map, Activity, Database, Shield, X } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
-  { name: 'Overview', icon: Home },
-  { name: 'Map', icon: Map },
-  { name: 'Sources', icon: Database },
-  { name: 'Forecasts', icon: Activity },
+  { name: 'Overview', icon: Home, path: '/' },
+  { name: 'Map', icon: Map, path: '/map' },
+  { name: 'Sources', icon: Database, path: '#' },
+  { name: 'Forecasts', icon: Activity, path: '#' },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -35,6 +36,8 @@ export default function Sidebar({ isOpen, onClose }) {
 }
 
 function SidebarContent({ onItemClick }) {
+  const location = useLocation();
+
   return (
     <>
       <div>
@@ -49,24 +52,26 @@ function SidebarContent({ onItemClick }) {
         </div>
 
         <nav className="mt-4 space-y-1 px-3">
-          {navItems.map((item, index) => (
-            <a
-              key={item.name}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                if (onItemClick) onItemClick();
-              }}
-              className={`flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 touch-target ${
-                index === 0
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/20'
-                  : 'hover:bg-slate-800/60 hover:text-white'
-              }`}
-            >
-              <item.icon className={`w-5 h-5 mr-3 ${index === 0 ? 'text-white' : 'text-slate-400'}`} />
-              {item.name}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path || (location.pathname === '/' && item.path === '/');
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                onClick={() => {
+                  if (onItemClick) onItemClick();
+                }}
+                className={`flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 touch-target ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/20'
+                    : 'hover:bg-slate-800/60 hover:text-white'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
