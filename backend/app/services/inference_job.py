@@ -7,7 +7,8 @@ import shap
 from datetime import datetime, timezone
 
 from app.core.database import SessionLocal
-from app.models.air_quality import AirQualityLog  # still used for saving logs
+from app.models.air_quality import AirQualityLog
+from app.services.telegram_alert import send_alert  # still used for saving logs
 from app.ml.yolo_counter import count_vehicles
 from app.ml.model_defs import CNNLSTMForecast
 from app.core.config import settings
@@ -197,5 +198,10 @@ def run_adem_pipeline():
             db.add(log)
             db.commit()
             print(f"Saved DB Record: PM2.5={actual_pm25}, Pred={predicted_pm25:.2f}, Source={primary_source}")
+            
+            # Trigger Telegram Alert if predicted PM2.5 breaches WHO limit (50.0)
+            if predicted_pm25 > 50.0:
+                send_alert(predicted_pm25, primary_source, str(datetime.now(timezone.utc)))
+
     except Exception as e:
         print(f"DB Error: {e}")
