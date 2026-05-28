@@ -47,16 +47,23 @@ def get_live_data(db: Session = Depends(get_db)):
 @router.get("/api/forecast")
 def get_forecast(db: Session = Depends(get_db)):
     latest_log = db.query(AirQualityLog).order_by(AirQualityLog.timestamp.desc()).first()
-    base_pm25 = latest_log.pm25_predicted if latest_log and latest_log.pm25_predicted is not None else 40.0
-    
     base_time = datetime.now(timezone.utc)
     forecast = []
     
-    for i in range(1, 25):
-        forecast_time = base_time + timedelta(hours=i)
-        variation = math.sin(i * math.pi / 12) * 10
-        forecast.append({
-            "time": forecast_time.strftime("%H:00"),
-            "pm25": round(max(0, base_pm25 + variation), 2)
-        })
+    if latest_log and latest_log.forecast_array:
+        for i, val in enumerate(latest_log.forecast_array):
+            forecast_time = base_time + timedelta(hours=i+1)
+            forecast.append({
+                "time": forecast_time.strftime("%H:00"),
+                "pm25": round(val, 2)
+            })
+    else:
+        base_pm25 = latest_log.pm25_predicted if latest_log and latest_log.pm25_predicted is not None else 40.0
+        for i in range(1, 25):
+            forecast_time = base_time + timedelta(hours=i)
+            variation = math.sin(i * math.pi / 12) * 10
+            forecast.append({
+                "time": forecast_time.strftime("%H:00"),
+                "pm25": round(max(0, base_pm25 + variation), 2)
+            })
     return forecast

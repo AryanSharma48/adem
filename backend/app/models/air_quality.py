@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, JSON
 from datetime import datetime, timezone
 from app.core.database import Base
 
@@ -16,3 +16,4 @@ class AirQualityLog(Base):
     shap_pm25 = Column(Float, nullable=True)      # contribution of PM2.5 history
     shap_heating = Column(Float, nullable=True)   # contribution of heating degree days
     shap_traffic = Column(Float, nullable=True)   # contribution of vehicle count
+    forecast_array = Column(JSON, nullable=True)  # full 24-hour prediction array
