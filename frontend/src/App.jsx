@@ -4,8 +4,6 @@ import AirQualityOverview from './components/dashboard/AirQualityOverview';
 import TomorrowAlert from './components/dashboard/TomorrowAlert';
 import PollutionSources from './components/dashboard/PollutionSources';
 import ForecastChart from './components/dashboard/ForecastChart';
-import TrafficCount from './components/dashboard/TrafficCount';
-import TelegramAlertStatus from './components/dashboard/TelegramAlertStatus';
 import { getLiveStats } from './lib/api';
 
 export default function App() {
@@ -33,7 +31,7 @@ export default function App() {
   }, []);
 
   return (
-    <DashboardLayout>
+    <DashboardLayout liveData={liveData} loading={loading}>
       <div className="flex flex-col space-y-6 pb-12">
         
         {/* Top Row: Map (Left) + Alerts/Sources (Right) */}
@@ -47,18 +45,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* Middle Row: Forecast (Left) + Traffic (Right) */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <ForecastChart />
-          </div>
-          <div className="xl:col-span-1">
-            <TrafficCount liveData={liveData} loading={loading} />
-          </div>
+        {/* Bottom Row: Forecast (Full Width) */}
+        <div className="w-full">
+          <ForecastChart />
         </div>
-
-        {/* Bottom Banner */}
-        <TelegramAlertStatus liveData={liveData} loading={loading} />
 
       </div>
     </DashboardLayout>

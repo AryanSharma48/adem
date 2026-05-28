@@ -1,15 +1,25 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8000', // Assuming backend is on port 8000
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 export const getLiveStats = async () => {
   try {
     const res = await api.get('/api/live');
-    return res.data;
+    if (res.data && typeof res.data === 'object') {
+      return res.data;
+    }
+    console.warn("Unexpected live stats response format:", res.data);
+    return null;
   } catch (err) {
-    console.error("Failed to fetch live stats", err);
+    console.error("Failed to fetch live stats", err.message || err);
     return null;
   }
 };
@@ -17,9 +27,13 @@ export const getLiveStats = async () => {
 export const getForecast = async () => {
   try {
     const res = await api.get('/api/forecast');
-    return res.data;
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      return res.data;
+    }
+    console.warn("Unexpected forecast response format:", res.data);
+    return [];
   } catch (err) {
-    console.error("Failed to fetch forecast", err);
+    console.error("Failed to fetch forecast", err.message || err);
     return [];
   }
 };

@@ -1,42 +1,69 @@
 import React from 'react';
-import { Home, Map, Activity, Database, Car, Bell, Info, Shield } from 'lucide-react';
+import { Home, Map, Activity, Database, Shield, X } from 'lucide-react';
 
 const navItems = [
-  { name: 'Overview', icon: Home, active: true },
-  { name: 'Map', icon: Map, active: false },
-  { name: 'Forecast', icon: Activity, active: false },
-  { name: 'Sources', icon: Database, active: false },
-  { name: 'Traffic', icon: Car, active: false },
-  { name: 'Alerts', icon: Bell, active: false },
-  { name: 'About', icon: Info, active: false },
+  { name: 'Overview', icon: Home },
+  { name: 'Map', icon: Map },
+  { name: 'Sources', icon: Database },
+  { name: 'Forecasts', icon: Activity },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   return (
-    <div className="w-64 bg-[#0f172a] text-slate-300 h-screen flex flex-col justify-between hidden md:flex border-r border-slate-800">
+    <>
+      {/* Desktop sidebar — always visible on md+ */}
+      <div className="w-64 bg-[#0f172a] text-slate-300 h-screen flex-col justify-between border-r border-slate-800 hidden md:flex flex-shrink-0">
+        <SidebarContent />
+      </div>
+
+      {/* Mobile sidebar — slide-in drawer */}
+      <div className={`sidebar-mobile w-72 bg-[#0f172a] text-slate-300 flex flex-col justify-between md:hidden ${isOpen ? 'open' : ''}`}>
+        {/* Close button */}
+        <div className="absolute top-4 right-4 z-10">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors touch-target"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <SidebarContent onItemClick={onClose} />
+      </div>
+    </>
+  );
+}
+
+function SidebarContent({ onItemClick }) {
+  return (
+    <>
       <div>
         <div className="p-6 flex items-center space-x-3 text-white">
-          <div className="bg-blue-500 p-1.5 rounded-lg">
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">AirGuard</h1>
+            <h1 className="font-extrabold text-lg leading-tight tracking-tight">ADEM</h1>
             <p className="text-xs text-slate-400">Astana</p>
           </div>
         </div>
 
         <nav className="mt-4 space-y-1 px-3">
-          {navItems.map((item) => (
+          {navItems.map((item, index) => (
             <a
               key={item.name}
               href="#"
-              className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                item.active
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-slate-800 hover:text-white'
+              onClick={(e) => {
+                e.preventDefault();
+                if (onItemClick) onItemClick();
+              }}
+              className={`flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 touch-target ${
+                index === 0
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/20'
+                  : 'hover:bg-slate-800/60 hover:text-white'
               }`}
             >
-              <item.icon className={`w-5 h-5 mr-3 ${item.active ? 'text-white' : 'text-slate-400'}`} />
+              <item.icon className={`w-5 h-5 mr-3 ${index === 0 ? 'text-white' : 'text-slate-400'}`} />
               {item.name}
             </a>
           ))}
@@ -44,14 +71,14 @@ export default function Sidebar() {
       </div>
 
       <div className="p-6">
-        <div className="bg-[#1e293b] rounded-xl p-4 border border-slate-800">
+        <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-xl p-4 border border-slate-700/50">
           <div className="flex items-center space-x-2 text-emerald-400 mb-2">
             <Shield className="w-4 h-4" />
           </div>
           <p className="text-sm font-medium text-white mb-2">Protect your health. Protect our future.</p>
-          <p className="text-xs text-slate-400">AirGuard Astana is an open-source initiative for a cleaner, healthier city.</p>
+          <p className="text-xs text-slate-400 leading-relaxed">ADEM Astana is an open-source initiative for a cleaner, healthier city.</p>
         </div>
       </div>
-    </div>
+    </>
   );
 }

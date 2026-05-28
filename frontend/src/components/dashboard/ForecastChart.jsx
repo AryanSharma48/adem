@@ -1,59 +1,98 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { AlertTriangle } from 'lucide-react';
 import { getForecast } from '../../lib/api';
 
 export default function ForecastChart() {
   const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const fetchForecast = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const forecast = await getForecast();
+      if (forecast && forecast.length > 0) {
+        setData(forecast);
+      } else {
+        setError(true);
+      }
+    } catch (err) {
+      console.error("Failed to load forecast from backend:", err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchForecast = async () => {
-      try {
-        const forecast = await getForecast();
-        if (forecast && forecast.length > 0) {
-          setData(forecast);
-        } else {
-          loadMockData();
-        }
-      } catch (err) {
-        console.error("Failed to load forecast from backend:", err);
-        loadMockData();
-      }
-    };
-
-    const loadMockData = () => {
-      const times = ["12 AM", "3 AM", "6 AM", "9 AM", "12 PM", "3 PM", "6 PM", "9 PM", "12 AM"];
-      const values = [15, 14, 20, 35, 60, 78, 65, 40, 22];
-      
-      const mockData = times.map((time, index) => ({
-        time,
-        pm25: values[index]
-      }));
-      setData(mockData);
-    };
-
     fetchForecast();
     // Poll forecast every 5 minutes
     const interval = setInterval(fetchForecast, 300000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleRetry = () => {
+    fetchForecast();
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px]">
+        <div className="flex justify-between items-center mb-6">
+          <div className="h-6 w-48 bg-slate-200 rounded skeleton"></div>
+          <div className="h-4 w-64 bg-slate-200 rounded skeleton hidden sm:block"></div>
+        </div>
+        <div className="flex-1 w-full bg-slate-50 rounded-xl skeleton flex items-center justify-center">
+          <p className="text-slate-400 text-sm font-semibold tracking-wide">Fetching 24-Hour Forecast...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px] items-center justify-center text-center">
+        <div className="p-4 bg-red-50 text-red-500 rounded-full mb-4">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-800 mb-1">Failed to Load Forecast Data</h3>
+        <p className="text-slate-500 text-sm max-w-sm mb-4">
+          There was an error communicating with the ADEM forecast endpoint.
+        </p>
+        <button
+          onClick={handleRetry}
+          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-lg shadow-blue-600/20 text-sm transition-all duration-200 active:scale-95 touch-target"
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-bold text-slate-900">24-Hour Air Quality Forecast</h3>
-        <div className="flex space-x-4 text-xs font-medium">
-          <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Good</div>
-          <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-yellow-400 mr-2"></span> Moderate</div>
-          <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-orange-500 mr-2"></span> Unhealthy</div>
-          <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span> Very Unhealthy</div>
-          <div className="flex items-center"><span className="w-2 h-2 rounded-full bg-purple-600 mr-2"></span> Hazardous</div>
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px] card-hover">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900">24-Hour Air Quality Forecast</h3>
+          <p className="text-xs text-slate-400 font-semibold mt-0.5">Predicted PM2.5 trends for the next day</p>
+        </div>
+        
+        {/* Responsive, wrapping legend */}
+        <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span> Good</div>
+          <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-1.5"></span> Moderate</div>
+          <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 mr-1.5"></span> Unhealthy</div>
+          <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-red-500 mr-1.5"></span> Very Unhealthy</div>
+          <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full bg-purple-600 mr-1.5"></span> Hazardous</div>
         </div>
       </div>
 
-      <div className="flex-1 w-full relative min-h-[250px]">
-        <p className="text-xs text-slate-500 absolute -top-2 left-0 z-10">PM2.5 µg/m³</p>
+      <div className="flex-1 w-full relative min-h-[200px]">
+        <p className="text-[10px] font-bold text-slate-400 absolute -top-4 left-0 z-10">PM2.5 µg/m³</p>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 20, right: 0, left: -25, bottom: 0 }}>
             <defs>
               <linearGradient id="colorPm25" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
@@ -61,13 +100,13 @@ export default function ForecastChart() {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dx={-10} domain={[0, 100]} ticks={[0, 25, 50, 75, 100]} />
+            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 'bold' }} dy={10} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 'bold' }} dx={-5} domain={[0, 'auto']} />
             <Tooltip 
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
               itemStyle={{ color: '#0f172a', fontWeight: 'bold' }}
+              formatter={(value) => [`${value} µg/m³`, 'PM2.5']}
             />
-            {/* Base gradient area */}
             <Area 
               type="monotone" 
               dataKey="pm25" 
@@ -75,15 +114,15 @@ export default function ForecastChart() {
               strokeWidth={3}
               fillOpacity={1} 
               fill="url(#colorPm25)" 
-              dot={{ r: 4, strokeWidth: 2, fill: "#fff" }}
-              activeDot={{ r: 6, fill: "#ef4444", stroke: "#fff", strokeWidth: 2 }}
+              dot={{ r: 3, strokeWidth: 1.5, fill: "#fff", stroke: "#ef4444" }}
+              activeDot={{ r: 5, fill: "#ef4444", stroke: "#fff", strokeWidth: 2 }}
             />
             {data.length > 5 && (
               <ReferenceLine 
                 x={data[Math.min(data.length - 1, 15)]?.time} 
                 stroke="#ef4444" 
                 strokeDasharray="3 3" 
-                label={{ position: 'bottom', value: 'Predicted Alert', fill: '#ef4444', fontSize: 10, fontWeight: 'bold' }} 
+                label={{ position: 'bottom', value: 'Predicted Alert', fill: '#ef4444', fontSize: 9, fontWeight: 'black' }} 
               />
             )}
           </AreaChart>
