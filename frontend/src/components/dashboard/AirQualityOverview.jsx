@@ -103,7 +103,7 @@ export default function AirQualityOverview({ liveData, loading }) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-full">
         <div className="flex items-center justify-between mb-4">
           <div className="space-y-2.5 w-1/3">
             <div className="h-6 w-full bg-slate-200 rounded skeleton"></div>
@@ -121,7 +121,7 @@ export default function AirQualityOverview({ liveData, loading }) {
   // Handle case where API is down or empty
   if (!liveData) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full items-center justify-center text-center">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-full items-center justify-center text-center">
         <div className="p-4 bg-red-50 text-red-500 rounded-full mb-4">
           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -156,7 +156,7 @@ export default function AirQualityOverview({ liveData, loading }) {
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full card-hover">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
         <div>
           <h3 className="text-lg font-bold text-slate-900">Live Air Quality Map</h3>
@@ -239,7 +239,7 @@ export default function AirQualityOverview({ liveData, loading }) {
         </MapContainer>
 
         {/* Floating Legend Overlay */}
-        <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm p-3 rounded-lg border border-slate-200 shadow-lg z-[1000] hidden sm:block whitespace-nowrap">
+        <div className="absolute bottom-10 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-none border-2 border-slate-300 shadow-lg z-[1000] hidden sm:block whitespace-nowrap">
           <p className="text-[9px] font-black text-slate-700 uppercase tracking-wider mb-2">{isPM ? 'AQI Legend (PM2.5)' : 'AQI Legend (US AQI)'}</p>
           <div className="space-y-1.5 text-[10px] font-bold text-slate-600 w-full">
             <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Good</div> <span className="text-slate-400">{isPM ? '0-15' : '0-50'}</span></div>

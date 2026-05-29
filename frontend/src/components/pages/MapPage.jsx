@@ -185,7 +185,7 @@ export default function MapPage({ liveData }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)] min-h-[600px] pb-6">
       {/* Search Sidebar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-full">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 flex flex-col overflow-hidden h-full">
         <div className="p-6 border-b border-slate-100">
           <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center">
             <Search className="w-5 h-5 mr-2 text-blue-500" />
@@ -199,7 +199,7 @@ export default function MapPage({ liveData }) {
               placeholder="e.g. London, Shymkent, Tokyo..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm font-medium text-slate-700"
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm font-medium text-slate-700"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
             <button 
@@ -230,7 +230,7 @@ export default function MapPage({ liveData }) {
 
           <div className="space-y-3">
             {searchResults.map((result, idx) => (
-              <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+              <div key={idx} className="bg-white border-2 border-slate-300 rounded-none p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h3 className="font-bold text-slate-900">{result.name}</h3>
@@ -258,7 +258,7 @@ export default function MapPage({ liveData }) {
       </div>
 
       {/* Map Container */}
-      <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-col h-full">
+      <div className="lg:col-span-2 bg-white rounded-none shadow-sm border-2 border-slate-300 p-4 flex flex-col h-full">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 px-2 gap-4">
           <div>
             <h2 className="text-xl font-bold text-slate-900">Astana Sensor Network</h2>
@@ -328,7 +328,7 @@ export default function MapPage({ liveData }) {
           </MapContainer>
 
           {/* Floating Legend Overlay */}
-          <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm p-3 rounded-lg border border-slate-200 shadow-lg z-[1000] hidden sm:block whitespace-nowrap">
+          <div className="absolute bottom-10 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-none border-2 border-slate-300 shadow-lg z-[1000] hidden sm:block whitespace-nowrap">
             <p className="text-[9px] font-black text-slate-700 uppercase tracking-wider mb-2">{isPM ? 'AQI Legend (PM2.5)' : 'AQI Legend (US AQI)'}</p>
             <div className="space-y-1.5 text-[10px] font-bold text-slate-600 w-full">
               <div className="flex items-center justify-between gap-4"><div className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Good</div> <span className="text-slate-400">{isPM ? '0-15' : '0-50'}</span></div>

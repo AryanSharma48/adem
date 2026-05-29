@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Map, Activity, Database, Shield, X } from 'lucide-react';
+import { Home, Map, Activity, Database, Shield, X, Send } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
@@ -75,7 +75,30 @@ function SidebarContent({ onItemClick }) {
         </nav>
       </div>
 
-      <div className="p-6">
+      <div className="p-6 space-y-4">
+        {/* Telegram CTA Box */}
+        <div className="bg-[#0088cc]/10 rounded-xl p-4 border border-[#0088cc]/20 relative overflow-hidden">
+          <div className="relative z-10">
+            <h3 className="text-sm font-bold text-white mb-1.5 flex items-center">
+              <span className="w-2 h-2 rounded-full bg-[#0088cc] mr-2 animate-pulse"></span>
+              Real-time Alerts
+            </h3>
+            <p className="text-xs text-slate-300 mb-3 leading-relaxed">
+              Get notified instantly when pollution spikes in your area.
+            </p>
+            <a 
+              href="https://t.me/adem_astana" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-full py-2 bg-[#0088cc] hover:bg-[#0077b3] text-white text-xs font-bold rounded-lg transition-colors"
+            >
+              <Send className="w-3.5 h-3.5 mr-1.5" />
+              Join Telegram Channel
+            </a>
+          </div>
+        </div>
+
+        {/* Existing Protect Health Box */}
         <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-xl p-4 border border-slate-700/50">
           <div className="flex items-center space-x-2 text-emerald-400 mb-2">
             <Shield className="w-4 h-4" />

@@ -11,7 +11,7 @@ export default function TomorrowAlert({ liveData, loading }) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between h-[216px]">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col justify-between h-[216px]">
         <div className="space-y-4 w-full">
           {/* Header */}
           <div className="flex items-center space-x-2">
@@ -33,7 +33,7 @@ export default function TomorrowAlert({ liveData, loading }) {
   // Fallback for null data if error occurs
   if (!liveData) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-center items-center text-center h-[216px]">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col justify-center items-center text-center h-[216px]">
         <AlertTriangle className="w-8 h-8 text-amber-500 mb-2" />
         <h4 className="text-sm font-extrabold text-slate-800">Forecast Unavailable</h4>
         <p className="text-xs text-slate-500 mt-1 max-w-[200px]">No live forecast metrics are currently available from the ADEM database.</p>
@@ -70,7 +70,7 @@ export default function TomorrowAlert({ liveData, loading }) {
   const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 card-hover flex flex-col justify-between min-h-[216px]">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col justify-between min-h-[216px]">
       <div>
         <div className={`flex items-center font-extrabold text-sm mb-3.5 ${statusClass}`}>
           <AlertTriangle className="w-4.5 h-4.5 mr-2 animate-pulse" />

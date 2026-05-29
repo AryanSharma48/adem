@@ -12,7 +12,7 @@ export default function TrafficCount({ liveData, loading }) {
   const trucks = Math.max(0, totalVehicles - cars - buses);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-slate-900">Live Traffic Count</h3>
         <span className="text-xs font-medium text-slate-500">Right now</span>

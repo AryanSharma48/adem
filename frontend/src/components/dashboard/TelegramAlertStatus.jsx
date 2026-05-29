@@ -9,7 +9,7 @@ export default function TelegramAlertStatus({ liveData, loading }) {
   const district = isAvailable ? liveData.district : "Astana northeast";
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex items-center justify-between">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-4 flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <div className="bg-blue-500 p-3 rounded-xl text-white">
           <Send className="w-6 h-6" />

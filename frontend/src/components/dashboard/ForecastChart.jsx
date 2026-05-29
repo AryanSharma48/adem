@@ -39,7 +39,7 @@ export default function ForecastChart() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px]">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-[350px]">
         <div className="flex justify-between items-center mb-6">
           <div className="h-6 w-48 bg-slate-200 rounded skeleton"></div>
           <div className="h-4 w-64 bg-slate-200 rounded skeleton hidden sm:block"></div>
@@ -53,7 +53,7 @@ export default function ForecastChart() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px] items-center justify-center text-center">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-[350px] items-center justify-center text-center">
         <div className="p-4 bg-red-50 text-red-500 rounded-full mb-4">
           <AlertTriangle className="w-8 h-8" />
         </div>
@@ -78,7 +78,7 @@ export default function ForecastChart() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[350px] card-hover">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-[350px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h3 className="text-lg font-bold text-slate-900">24-Hour Air Quality Forecast</h3>

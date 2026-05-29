@@ -22,6 +22,10 @@ model_path = os.path.join(ml_dir, "adem_forecast.pt")
 scaler = None
 model = None
 
+# --- Alert State ---
+last_telegram_time = None
+last_telegram_pm25 = None
+
 try:
     if os.path.exists(scaler_path):
         scaler = joblib.load(scaler_path)
@@ -39,6 +43,7 @@ except Exception as e:
 
 # --- Pipeline ---
 def run_adem_pipeline():
+    global last_telegram_time, last_telegram_pm25
     print(f"[{datetime.now(timezone.utc).isoformat()}] Running ADEM Inference Pipeline...")
     
     # 1. Real-time vehicles per minute
@@ -224,7 +229,24 @@ def run_adem_pipeline():
             
             # Trigger Telegram Alert if predicted PM2.5 breaches limit (15.0)
             if predicted_pm25 > 15.0:
-                send_alert(predicted_pm25, primary_source, str(datetime.now(timezone.utc)))
+                now_utc = datetime.now(timezone.utc)
+                should_send = False
+                
+                if last_telegram_time is None:
+                    should_send = True
+                else:
+                    time_diff = now_utc - last_telegram_time
+                    if time_diff > timedelta(hours=2):
+                        should_send = True
+                    elif last_telegram_pm25 is not None and predicted_pm25 > 2 * last_telegram_pm25:
+                        should_send = True
+                        
+                if should_send:
+                    send_alert(predicted_pm25, primary_source, str(now_utc))
+                    last_telegram_time = now_utc
+                    last_telegram_pm25 = predicted_pm25
+                else:
+                    print(f"Telegram alert skipped. Last sent at {last_telegram_time}, last PM2.5 was {last_telegram_pm25}.")
 
     except Exception as e:
         print(f"DB Error: {e}")

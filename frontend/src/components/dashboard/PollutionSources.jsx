@@ -11,7 +11,7 @@ const defaultData = [
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-lg border border-slate-200 shadow-sm flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+      <div className="bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-none border-2 border-slate-300 shadow-sm flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: payload[0].payload.color }}></span>
         <span>{payload[0].name} <span className="text-slate-900 ml-0.5">{payload[0].value}%</span></span>
       </div>
@@ -23,7 +23,7 @@ const CustomTooltip = ({ active, payload }) => {
 export default function PollutionSources({ liveData, loading }) {
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-[288px]">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-[288px]">
         <div className="space-y-2 mb-6">
           <div className="h-5 w-2/3 bg-slate-200 rounded skeleton"></div>
           <div className="h-4 w-1/2 bg-slate-200 rounded skeleton"></div>
@@ -43,7 +43,7 @@ export default function PollutionSources({ liveData, loading }) {
   // Fallback for null data if error occurs
   if (!liveData) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-center items-center text-center h-[288px]">
+      <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col justify-center items-center text-center h-[288px]">
         <AlertTriangle className="w-8 h-8 text-amber-500 mb-2" />
         <h4 className="text-sm font-extrabold text-slate-800">Source Metrics Unavailable</h4>
         <p className="text-xs text-slate-500 mt-1 max-w-[200px]">Pollution attribution metrics are currently unavailable from the ADEM database.</p>
@@ -107,7 +107,7 @@ export default function PollutionSources({ liveData, loading }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 card-hover min-h-[288px] flex flex-col justify-between">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 min-h-[288px] flex flex-col justify-between">
       <div>
         <h3 className="text-lg font-bold text-slate-900">Why Tomorrow Will Be {statusText}</h3>
         <p className="text-sm text-slate-500 mb-4">Source attribution for predicted pollution</p>
