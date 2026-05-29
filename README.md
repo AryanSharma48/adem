@@ -1,143 +1,134 @@
-# ADEM: AI-Driven Environmental Monitor
+# 🌍 ADEM: AI-Driven Environmental Monitor
 
-ADEM is an end-to-end, real-time air quality forecasting, monitoring, and alert system specifically designed for Astana, Kazakhstan.
+![ADEM Header](https://img.shields.io/badge/ADEM-Astana_Air_Quality-0088cc?style=for-the-badge&logo=react)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-CNN_LSTM-red?style=for-the-badge&logo=pytorch)
+![React](https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react)
 
-## 🚀 The Pipeline
-
-ADEM leverages a unique hybrid pipeline of computer vision, live API data, and deep learning:
-
-1. **Live Traffic Analysis:** Pulls live traffic camera feeds (or videos) and runs **YOLOv8** to accurately count vehicles per minute (VPM).
-2. **Environmental Context:** Fetches live temperature from the **Open-Meteo Forecast API** to calculate heating degree days (HDD).
-3. **Air Quality Baseline:** Fetches the live PM2.5 concentration (µg/m³) directly from the **Open-Meteo Air Quality API** — the same source the model was trained on, ensuring unit consistency.
-4. **Deep Learning Forecast:** Feeds the last 24 hours of real hourly PM2.5, HDD, and traffic data into a PyTorch **CNN-LSTM** model to predict PM2.5 levels for the next 24 hours. The live current reading is always anchored as the final input step.
-5. **Real-time Alerting:** If the predicted PM2.5 breaches the WHO safe limit (50 µg/m³), the system automatically triggers a **Telegram Bot** alert. Messages are broadcast in both **English and Kazakh** to a public channel.
-6. **Explainable AI (SHAP):** Computes live feature importance for every prediction (e.g. 60% PM2.5 history, 30% heating, 10% traffic) using a GradientExplainer.
-7. **Data Persistence:** Logs every inference run (actual PM2.5, predicted PM2.5, vehicle count, primary source, and SHAP percentages) to a **PostgreSQL** database hosted on Supabase.
-8. **Data Visualization:** Exposes all data via a **FastAPI** REST backend to be consumed by a responsive dashboard.
+**ADEM** is an end-to-end, real-time air quality forecasting, monitoring, and alert system specifically designed for Astana, Kazakhstan. It provides citizens and authorities with accurate, AI-powered predictions to stay safe from air pollution.
 
 ---
 
-## 🧠 ML Model
+## ✨ Key Features
 
-The forecasting model (`adem_forecast.pt`) is a **CNN-LSTM hybrid** trained on 1 year of real Astana data:
+- **📱 Modern & Responsive UI:** A beautifully designed frontend with a clean mobile-first approach, dark mode support, and seamless user experience.
+- **🌐 Bilingual Support:** Native English (EN) and Kazakh (KZ) localization via a sleek language toggle pill.
+- **🤖 Deep Learning Forecast:** A PyTorch-based CNN-LSTM model predicts PM2.5 levels for the next 24 hours based on historical data, traffic, and weather.
+- **🚦 Live Traffic Analysis:** Uses YOLOv8 on traffic feeds to count vehicles per minute (VPM), correlating rush hour traffic with air quality.
+- **🔔 Real-time Alerts:** Automatically triggers Telegram Bot alerts in both English and Kazakh when PM2.5 breaches WHO safe limits (> 50 µg/m³).
+- **📊 Explainable AI (SHAP):** Live feature importance is calculated to show *why* pollution is high (e.g., 60% historical PM2.5, 30% heating, 10% traffic).
 
-- **Architecture:** `Conv1D(3→16) → ReLU → LSTM(16→32) → Linear(32→24)`
-- **Input:** 24-hour sliding window of 3 features: `[pm2_5, heating_degree_days, vehicles_per_minute]`
-- **Output:** 24 PM2.5 predictions (one per hour for the next 24 hours)
-- **Training Data:** 8,784 hourly records from the Open-Meteo Air Quality & Archive APIs (May 2025 – May 2026)
-- **Loss at epoch 50:** Train `0.000146` | Val `0.010475`
+---
 
-### Features
-| Feature | Description | Source |
-|---------|-------------|--------|
-| `pm2_5` | Hourly PM2.5 concentration (µg/m³) | Open-Meteo Air Quality API |
-| `heating_degree_days` | `max(18 - temp, 0)` — proxy for indoor heating | Open-Meteo Archive API |
-| `vehicles_per_minute` | Synthetic rush-hour traffic proxy (spikes at 08:00, 18:00) | Simulated from YOLOv8 |
+## 🚀 The AI Pipeline
+
+ADEM leverages a unique hybrid pipeline of computer vision, live APIs, and deep learning:
+
+1. **Traffic Extraction:** Pulls live camera feeds and runs YOLOv8 to estimate VPM.
+2. **Environmental Context:** Fetches live temperature from Open-Meteo to calculate Heating Degree Days (HDD).
+3. **Data Fusion:** Combines traffic, weather, and real-time PM2.5 readings.
+4. **Prediction:** A sliding 24-hour window is fed into the PyTorch CNN-LSTM model.
+5. **Insights:** SHAP values are extracted, data is logged to Supabase PostgreSQL, and the frontend dashboard is updated via FastAPI.
+
+---
+
+## 🧠 Machine Learning Model
+
+The core forecasting model (`adem_forecast.pt`) is trained on a full year of ground-truth Astana data.
+
+- **Architecture:** `Conv1D (3→16) → ReLU → LSTM (16→32) → Linear (32→24)`
+- **Input Features:** 
+  - `pm2_5`: Hourly concentration (µg/m³) from Open-Meteo Air Quality API
+  - `heating_degree_days`: Proxy for indoor heating based on temperature (`max(18 - temp, 0)`)
+  - `vehicles_per_minute`: Proxy for rush-hour traffic
+- **Output:** 24 hourly PM2.5 predictions for the upcoming day.
+- **Performance:** Validation Loss at epoch 50 was `0.010475`.
 
 ---
 
 ## 🛠️ Tech Stack
 
+**Frontend:**
+- React (Vite) + Tailwind CSS + Lucide Icons
+- React-Leaflet (Maps) & Recharts (Data Visualization)
+- i18next (EN/KZ Localization)
+
 **Backend:**
-* Python 3.10+
-* FastAPI & Uvicorn
-* SQLAlchemy & PostgreSQL (Supabase)
-* APScheduler (30-minute background inference jobs)
+- FastAPI & Uvicorn (REST API)
+- SQLAlchemy & PostgreSQL (Supabase)
+- APScheduler (Background inference jobs)
 
-**Machine Learning & Computer Vision:**
-* PyTorch — CNN-LSTM time-series forecasting
-* Ultralytics YOLOv8 — real-time vehicle tracking
-* OpenCV — video frame processing
-* Scikit-Learn — MinMaxScaler (`scaler.pkl`)
-* SHAP — Explainable AI (Feature Importance via `GradientExplainer`)
-
-**Data Sources:**
-* Open-Meteo Air Quality API — live & historical PM2.5 (µg/m³)
-* Open-Meteo Forecast API — live temperature
-* AQICN — fallback PM2.5 source (AQI index units)
-
-**Frontend (Phase 4 — in progress):**
-* React (Vite)
-* Dark-mode dashboard
-* Recharts — data visualization
-* React-Leaflet — map overlay
+**Machine Learning & Vision:**
+- PyTorch (CNN-LSTM Time-Series Forecasting)
+- Ultralytics YOLOv8 (Real-time vehicle tracking)
+- OpenCV, Scikit-Learn, SHAP
 
 ---
 
-## ⚙️ Backend Setup & Installation
+## ⚙️ Setup & Installation
 
 ### 1. Environment Variables
-Navigate to the `backend/` directory and copy the environment template:
+Navigate to the `backend/` directory and set up your environment:
 ```bash
 cd backend
 cp .env.example .env
 ```
-Fill in your `DATABASE_URL`, `AQICN_API_TOKEN`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` (e.g. `@adem_astana`) in the `.env` file.
+Fill in `DATABASE_URL` (Supabase IPv4 connection), `AQICN_API_TOKEN`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` (e.g. `@adem_astana`).
 
-> **Database:** Use the Supabase **Session Pooler** connection string (IPv4 compatible) as `DATABASE_URL`.
-
-### 2. Python Environment & Dependencies
+### 2. Backend (FastAPI)
 ```bash
 python -m venv venv
-
-# Windows:
-.\venv\Scripts\activate
-# Mac/Linux:
-source venv/bin/activate
-
+# Windows: .\venv\Scripts\activate | Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
-```
-
-### 3. Run the Server
-APScheduler automatically starts the 30-minute background ML inference pipeline on startup.
-```bash
 uvicorn app.main:app --reload --port 8000
+```
+*Note: APScheduler automatically starts the 30-minute background ML inference pipeline on startup.*
+
+### 3. Frontend (React/Vite)
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-## 🧪 ML Training Pipeline
+## 🧪 Retraining the ML Model
 
-To retrain the model from scratch:
+To retrain the model with fresh data:
 
 ```bash
 cd ml_training
 python -m venv venv && .\venv\Scripts\activate
 pip install -r requirements.txt
 
-# 1. Fetch 1 year of real Astana data from Open-Meteo APIs
-python data_pipeline.py        # → data/astana_ground_truth.csv
+# 1. Fetch data from Open-Meteo APIs
+python data_pipeline.py
 
-# 2. Open and run all cells in VS Code
-# notebooks/train_model.ipynb  → data/adem_forecast.pt + data/scaler.pkl
+# 2. Run training notebook
+# notebooks/train_model.ipynb → generates adem_forecast.pt & scaler.pkl
 
-# 3. Copy trained files to backend
+# 3. Copy weights to backend
 copy data\adem_forecast.pt ..\backend\app\ml\
 copy data\scaler.pkl ..\backend\app\ml\
 ```
 
 ---
 
-## 🏗️ Architecture (Monorepo)
+## 🏗️ Architecture Map
 
 ```text
 adem/
-├── backend/                    # FastAPI backend & ML inference pipeline
+├── backend/                    # FastAPI backend & inference engine
 │   ├── app/
-│   │   ├── main.py             # Entry point & APScheduler (30-min jobs)
 │   │   ├── api/                # REST endpoints
-│   │   ├── ml/                 # YOLOv8 counter, model definition, weights
-│   │   │   ├── model_defs.py   # CNNLSTMForecast architecture
-│   │   │   ├── adem_forecast.pt
-│   │   │   └── scaler.pkl
-│   │   ├── models/             # SQLAlchemy DB models
-│   │   └── services/           # inference_job.py — the main pipeline
-│   └── requirements.txt
-├── ml_training/                # Offline training pipeline
-│   ├── data_pipeline.py        # Fetches 1yr data from Open-Meteo APIs
-│   ├── notebooks/
-│   │   └── train_model.ipynb   # CNN-LSTM training (50 epochs)
-│   ├── data/                   # astana_ground_truth.csv, model weights
-│   └── requirements.txt
-└── frontend/                   # React dashboard (Phase 4 — in progress)
+│   │   ├── ml/                 # PyTorch models & YOLOv8 scripts
+│   │   ├── models/             # SQLAlchemy DB schemas
+│   │   └── services/           # Background scheduling & data fusion
+├── frontend/                   # Modern React Dashboard
+│   ├── src/
+│   │   ├── components/         # Reusable UI components & Layouts
+│   │   ├── locales/            # i18n translation files (EN, KK)
+│   │   └── pages/              # Main dashboard views
+└── ml_training/                # Offline training pipeline & Notebooks
 ```
