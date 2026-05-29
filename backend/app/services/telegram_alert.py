@@ -4,7 +4,7 @@ from app.core.config import settings
 
 def send_alert(pm25_predicted: float, primary_source: str, timestamp: str):
     """
-    Sends a MarkdownV2 formatted alert to Telegram when predicted PM2.5 exceeds WHO limits.
+    Sends a MarkdownV2 formatted alert to Telegram when predicted PM2.5 exceeds safe limits.
     """
     try:
         # MarkdownV2 requires escaping certain characters like `.`, `-`, `!`, etc.
@@ -22,25 +22,40 @@ def send_alert(pm25_predicted: float, primary_source: str, timestamp: str):
         except Exception:
             formatted_time = timestamp[:19] # Fallback
             
+        # Fetch current AQI from Open-Meteo
+        current_aqi = "N/A"
+        try:
+            aqi_res = requests.get(
+                "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=51.1694&longitude=71.4206&current=us_aqi",
+                timeout=5
+            )
+            aqi_res.raise_for_status()
+            current_aqi = str(aqi_res.json()["current"]["us_aqi"])
+        except Exception as e:
+            print(f"Failed to fetch current AQI: {e}")
+            
         location = escape_md2("Astana, KZ")
         safe_time = escape_md2(formatted_time)
         safe_pm25 = escape_md2(f"{pm25_predicted:.2f}")
         safe_source = escape_md2(primary_source.capitalize())
+        safe_aqi = escape_md2(current_aqi)
 
         message = (
             "⚠️ *ADEM Critical Alert* ⚠️\n\n"
             f"📍 *Location:* {location}\n"
             f"🕒 *Expected Spike:* {safe_time}\n"
+            f"💨 *Current AQI:* {safe_aqi}\n"
             f"😷 *Predicted PM2\\.5:* {safe_pm25} µg/m³\n"
             f"🚨 *Primary Driver:* {safe_source}\n"
-            "_Air quality is projected to breach WHO safe limits \\(50 µg/m³\\) within the next hour\\. Please take necessary precautions\\._\n\n"
+            "_Air quality is projected to breach strict safe limits \\(15 µg/m³\\) within the next hour\\. Please take necessary precautions\\._\n\n"
             "➖➖➖➖➖➖➖➖➖➖\n\n"
             "⚠️ *ADEM Қауіпті Ескертуі* ⚠️\n\n"
             f"📍 *Орналасқан жері:* {location}\n"
             f"🕒 *Күтілетін шарықтау шегі:* {safe_time}\n"
+            f"💨 *Ағымдағы AQI:* {safe_aqi}\n"
             f"😷 *Болжанған PM2\\.5:* {safe_pm25} µg/m³\n"
             f"🚨 *Негізгі себеп:* {safe_source}\n"
-            "_Ауа сапасы алдағы бір сағат ішінде ДДҰ қауіпсіздік шегінен \\(50 µg/m³\\) асады деп күтілуде\\. Қажетті сақтық шараларын қолданыңыз\\._"
+            "_Ауа сапасы алдағы бір сағат ішінде қатаң қауіпсіздік шегінен \\(15 µg/m³\\) асады деп күтілуде\\. Қажетті сақтық шараларын қолданыңыз\\._"
         )
 
         payload = {

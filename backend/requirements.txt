@@ -6,7 +6,7 @@ pydantic
 pydantic-settings
 python-dotenv
 ultralytics
-opencv-python
+opencv-python-headless
 apscheduler
 requests
 joblib
