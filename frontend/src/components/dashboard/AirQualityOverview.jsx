@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Map as MapIcon, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { useTranslation } from 'react-i18next';
 
 const getAqiColorClass = (val) => {
   if (val <= 15) return 'bg-emerald-500';
@@ -73,6 +76,7 @@ const createCustomIcon = (value, colorClass) => {
 };
 
 export default function AirQualityOverview({ liveData, loading }) {
+  const { t } = useTranslation();
   const [displayMode, setDisplayMode] = useState('PM2.5');
   
   const [nearbyCities, setNearbyCities] = useState([
@@ -156,19 +160,19 @@ export default function AirQualityOverview({ liveData, loading }) {
   ];
 
   return (
-    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-full">
+    <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-auto md:h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
         <div>
-          <h3 className="text-lg font-bold text-slate-900">Live Air Quality Map</h3>
+          <h3 className="text-lg font-bold text-slate-900">{t('map.liveMap')}</h3>
           <div className="flex items-center text-sm mt-1">
             <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse-dot"></span>
-            <span className="text-emerald-600 font-bold mr-2">Live</span>
-            <span className="text-slate-500">Astana sensor network</span>
+            <span className="text-emerald-600 font-bold mr-2">{t('map.live')}</span>
+            <span className="text-slate-500">{t('map.network')}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex bg-slate-100 p-1 rounded-lg">
+          <div className="hidden md:flex bg-slate-100 p-1 rounded-lg">
             <button 
               onClick={() => setDisplayMode('PM2.5')}
               className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${displayMode === 'PM2.5' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
@@ -190,8 +194,17 @@ export default function AirQualityOverview({ liveData, loading }) {
         </div>
       </div>
       
-      {/* Map Container */}
-      <div className="flex-1 bg-slate-50 rounded-xl relative overflow-hidden border border-slate-100 min-h-[300px]">
+      {/* Mobile Map Button */}
+      <div className="md:hidden mt-4">
+        <Link to="/map" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-lg flex items-center justify-center transition-colors">
+          <MapIcon className="w-5 h-5 mr-2" />
+          {t('map.viewFull')}
+          <ArrowRight className="w-5 h-5 ml-2 opacity-70" />
+        </Link>
+      </div>
+
+      {/* Map Container (Desktop Only) */}
+      <div className="hidden md:block flex-1 bg-slate-50 rounded-xl relative overflow-hidden border border-slate-100 min-h-[300px] mt-4">
         <MapContainer 
           center={[51.15, 71.43]} 
           zoom={11.5} 

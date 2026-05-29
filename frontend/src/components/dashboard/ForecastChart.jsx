@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AlertTriangle } from 'lucide-react';
 import { getForecast } from '../../lib/api';
+import { useTranslation } from 'react-i18next';
 
 export default function ForecastChart() {
+  const { t } = useTranslation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -81,8 +83,8 @@ export default function ForecastChart() {
     <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-[350px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h3 className="text-lg font-bold text-slate-900">24-Hour Air Quality Forecast</h3>
-          <p className="text-xs text-slate-400 font-semibold mt-0.5">Predicted PM2.5 trends for the next day</p>
+          <h3 className="text-lg font-bold text-slate-900">{t('forecast.title')}</h3>
+          <p className="text-xs text-slate-400 font-semibold mt-0.5">{t('forecast.predicted')} trends for the next day</p>
         </div>
         
         {/* Responsive, wrapping legend */}

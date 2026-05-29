@@ -1,15 +1,11 @@
 import React from 'react';
-import { Home, Map, Activity, Database, Shield, X, Send } from 'lucide-react';
+import { Home, Map, Activity, Database, X, Send } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-
-const navItems = [
-  { name: 'Overview', icon: Home, path: '/' },
-  { name: 'Map', icon: Map, path: '/map' },
-  { name: 'Sources', icon: Database, path: '#' },
-  { name: 'Forecasts', icon: Activity, path: '#' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function Sidebar({ isOpen, onClose }) {
+  const location = useLocation();
+
   return (
     <>
       {/* Desktop sidebar — always visible on md+ */}
@@ -36,15 +32,19 @@ export default function Sidebar({ isOpen, onClose }) {
 }
 
 function SidebarContent({ onItemClick }) {
+  const { t } = useTranslation();
   const location = useLocation();
+
+  const navItems = [
+    { name: t('nav.overview'), icon: Home, path: '/' },
+    { name: t('nav.map'), icon: Map, path: '/map' },
+    { name: t('nav.sources'), icon: Database, path: '/sources' },
+  ];
 
   return (
     <>
       <div>
         <div className="p-6 flex items-center space-x-3 text-white">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
-            <Shield className="w-6 h-6" />
-          </div>
           <div>
             <h1 className="font-extrabold text-lg leading-tight tracking-tight">ADEM</h1>
             <p className="text-xs text-slate-400">Astana</p>
@@ -63,8 +63,8 @@ function SidebarContent({ onItemClick }) {
                 }}
                 className={`flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 touch-target ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/20'
-                    : 'hover:bg-slate-800/60 hover:text-white'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                 }`}
               >
                 <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-slate-400'}`} />
@@ -99,11 +99,10 @@ function SidebarContent({ onItemClick }) {
         </div>
 
         {/* Existing Protect Health Box */}
-        <div className="bg-gradient-to-br from-[#1e293b] to-[#0f172a] rounded-xl p-4 border border-slate-700/50">
-          <div className="flex items-center space-x-2 text-emerald-400 mb-2">
-            <Shield className="w-4 h-4" />
-          </div>
-          <p className="text-sm font-medium text-white mb-2">Protect your health. Protect our future.</p>
+        <div className="bg-[#0f172a] rounded-xl p-4 border border-slate-800">
+          <p className="font-bold text-white mb-2 mt-1">
+            Protect your health.<br/>Protect our future.
+          </p>
           <p className="text-xs text-slate-400 leading-relaxed">ADEM Astana is an open-source initiative for a cleaner, healthier city.</p>
         </div>
       </div>

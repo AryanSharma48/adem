@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function TomorrowAlert({ liveData, loading }) {
+  const { t } = useTranslation();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function TomorrowAlert({ liveData, loading }) {
       <div>
         <div className={`flex items-center font-extrabold text-sm mb-3.5 ${statusClass}`}>
           <AlertTriangle className="w-4.5 h-4.5 mr-2 animate-pulse" />
-          Tomorrow's Air Quality Alert
+          {t('alert.title')}
         </div>
         
         <div className="flex justify-between items-end">
@@ -89,7 +91,7 @@ export default function TomorrowAlert({ liveData, loading }) {
             </div>
             <p className="text-xs font-medium text-slate-500 leading-relaxed max-w-[240px]">
               {pm25 > 50 
-                ? "Limit outdoor activity for children, elderly and people with respiratory conditions."
+                ? t('alert.action')
                 : "Air quality is suitable for standard outdoor physical activities."}
             </p>
           </div>

@@ -3,6 +3,7 @@ import { Search, MapPin, Wind, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
+import { useTranslation } from 'react-i18next';
 
 const getAqiColorClass = (val) => {
   if (val <= 15) return 'bg-emerald-500';
@@ -80,28 +81,38 @@ const createCustomIcon = (value, colorClass) => {
 };
 
 export default function MapPage({ liveData }) {
+  const { t } = useTranslation();
   const [displayMode, setDisplayMode] = useState('PM2.5'); // 'PM2.5' or 'AQI'
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [error, setError] = useState(null);
+  const [selectedStation, setSelectedStation] = useState(null);
 
-  const [nearbyCities, setNearbyCities] = useState([
+  const initialCities = [
     { name: "Saryarka District (West)", lat: 51.1685, lng: 71.4082, pm25: null, aqi: null, isLive: true },
     { name: "Almaty District (Northeast)", lat: 51.1833, lng: 71.4667, pm25: null, aqi: null, isLive: true },
-    { name: "Nursultan District (Southwest)", lat: 51.1282, lng: 71.4305, pm25: null, aqi: null, isLive: true }
-  ]);
+    { name: "Nursultan District (Southwest)", lat: 51.1282, lng: 71.4305, pm25: null, aqi: null, isLive: true },
+    { name: "Yesil District (South)", lat: 51.1147, lng: 71.4167, pm25: null, aqi: null, isLive: true },
+    { name: "Expo 2017 Area (Southeast)", lat: 51.0898, lng: 71.4150, pm25: null, aqi: null, isLive: true },
+    { name: "Koktal (Northwest)", lat: 51.1923, lng: 71.3508, pm25: null, aqi: null, isLive: true },
+    { name: "Railway Station (North)", lat: 51.2052, lng: 71.4138, pm25: null, aqi: null, isLive: true }
+  ];
+
+  const [nearbyCities, setNearbyCities] = useState(initialCities);
 
   useEffect(() => {
     const fetchNearby = async () => {
       try {
-        const res = await axios.get("https://air-quality-api.open-meteo.com/v1/air-quality?latitude=51.1685,51.1833,51.1282&longitude=71.4082,71.4667,71.4305&current=pm2_5,us_aqi");
+        const lats = initialCities.map(c => c.lat).join(',');
+        const lngs = initialCities.map(c => c.lng).join(',');
+        const res = await axios.get(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lats}&longitude=${lngs}&current=pm2_5,us_aqi`);
         if (Array.isArray(res.data)) {
-          setNearbyCities(prev => [
-            { ...prev[0], pm25: res.data[0]?.current?.pm2_5, aqi: res.data[0]?.current?.us_aqi },
-            { ...prev[1], pm25: res.data[1]?.current?.pm2_5, aqi: res.data[1]?.current?.us_aqi },
-            { ...prev[2], pm25: res.data[2]?.current?.pm2_5, aqi: res.data[2]?.current?.us_aqi }
-          ]);
+          setNearbyCities(prev => prev.map((city, i) => ({
+            ...city,
+            pm25: res.data[i]?.current?.pm2_5,
+            aqi: res.data[i]?.current?.us_aqi
+          })));
         }
       } catch (err) {
         console.error("Error fetching nearby districts AQI:", err);
@@ -183,36 +194,36 @@ export default function MapPage({ liveData }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)] min-h-[600px] pb-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[calc(100vh-140px)] lg:min-h-[600px] pb-6">
       {/* Search Sidebar */}
       <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 flex flex-col overflow-hidden h-full">
         <div className="p-6 border-b border-slate-100">
-          <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center">
-            <Search className="w-5 h-5 mr-2 text-blue-500" />
-            Global Air Quality Search
-          </h2>
-          <p className="text-sm text-slate-500 mb-4">Search any city, town, or area to check real-time PM2.5 levels.</p>
+            <h1 className="text-xl font-black text-slate-900 mb-1">{t('mappage.network')}</h1>
+            <p className="text-sm font-semibold text-blue-600 flex items-center">
+              <span className="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-pulse-dot"></span>
+              {stations.length} {t('mappage.sensors')}
+            </p>
+          </div>
           
-          <form onSubmit={handleSearch} className="relative">
-            <input
-              type="text"
-              placeholder="e.g. London, Shymkent, Tokyo..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm font-medium text-slate-700"
-            />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-            <button 
-              type="submit"
-              disabled={isSearching}
-              className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            </button>
-          </form>
-        </div>
+          <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50">
+            <form onSubmit={handleSearch} className="relative mb-6">
+              <input 
+                type="text" 
+                placeholder={t('mappage.search')} 
+                className="w-full pl-10 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+              <button 
+                type="submit"
+                disabled={isSearching}
+                className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </button>
+            </form>
 
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-xl flex items-start text-sm font-medium">
               <AlertCircle className="w-5 h-5 mr-2 shrink-0 mt-0.5" />
@@ -230,7 +241,7 @@ export default function MapPage({ liveData }) {
 
           <div className="space-y-3">
             {searchResults.map((result, idx) => (
-              <div key={idx} className="bg-white border-2 border-slate-300 rounded-none p-4">
+              <div key={idx} className="bg-white border-2 border-slate-300 rounded-none p-4 cursor-pointer hover:border-blue-500" onClick={() => setSelectedStation(result)}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h3 className="font-bold text-slate-900">{result.name}</h3>
@@ -258,11 +269,14 @@ export default function MapPage({ liveData }) {
       </div>
 
       {/* Map Container */}
-      <div className="lg:col-span-2 bg-white rounded-none shadow-sm border-2 border-slate-300 p-4 flex flex-col h-full">
+      <div className="lg:col-span-2 bg-white rounded-none shadow-sm border-2 border-slate-300 p-4 flex flex-col h-full min-h-[500px] lg:min-h-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 px-2 gap-4">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Astana Sensor Network</h2>
-            <p className="text-sm text-slate-500 mt-1">Live overview of the local monitoring grid</p>
+            <h2 className="text-xl font-bold text-slate-900">{t('mappage.network')}</h2>
+            <div className="flex items-center text-sm mt-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse-dot"></span>
+              <span className="text-emerald-600 font-bold mr-2">{t('map.live')}</span>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex bg-slate-100 p-1 rounded-lg">
@@ -278,10 +292,6 @@ export default function MapPage({ liveData }) {
               >
                 AQI
               </button>
-            </div>
-            <div className="hidden sm:flex items-center bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full border border-emerald-100 text-sm font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-              Live
             </div>
           </div>
         </div>

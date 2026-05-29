@@ -8,6 +8,8 @@ import ForecastChart from './components/dashboard/ForecastChart';
 import MapPage from './components/pages/MapPage';
 import { getLiveStats } from './lib/api';
 
+import SourcesPage from './components/pages/SourcesPage';
+
 export default function App() {
   const [liveData, setLiveData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,7 @@ export default function App() {
           </div>
         } />
         <Route path="/map" element={<MapPage liveData={liveData} loading={loading} />} />
+        <Route path="/sources" element={<SourcesPage liveData={liveData} loading={loading} />} />
       </Routes>
     </DashboardLayout>
   );

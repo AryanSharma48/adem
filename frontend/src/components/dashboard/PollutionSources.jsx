@@ -1,6 +1,7 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Info, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const defaultData = [
   { name: 'Heating (Coal)', value: 61, color: '#ef4444' },
@@ -21,6 +22,7 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function PollutionSources({ liveData, loading }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 flex flex-col h-[288px]">
@@ -109,8 +111,8 @@ export default function PollutionSources({ liveData, loading }) {
   return (
     <div className="bg-white rounded-none shadow-sm border-2 border-slate-300 p-6 min-h-[288px] flex flex-col justify-between">
       <div>
-        <h3 className="text-lg font-bold text-slate-900">Why Tomorrow Will Be {statusText}</h3>
-        <p className="text-sm text-slate-500 mb-4">Source attribution for predicted pollution</p>
+        <h3 className="text-lg font-bold text-slate-900">{t('sources.title')}</h3>
+        <p className="text-sm text-slate-500 mb-4">{t('sources.subtitle')}</p>
         
         <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-6">
           <div className="w-full sm:w-1/2 h-[130px] relative">
